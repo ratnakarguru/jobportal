@@ -6,7 +6,7 @@ from app.models import Role
 from app.schemas import RoleCreate
 
 router = APIRouter(
-    prefix="/roles",
+    prefix="/select-role",
     tags=["Roles"]
 )
 

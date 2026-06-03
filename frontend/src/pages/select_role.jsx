@@ -31,7 +31,7 @@ function SelectRole() {
       if (response.ok) {
         alert("Role saved successfully");
 
-        navigate("/profile-setup");
+        navigate(`/profile-setup/${userId}`);
       } else {
         alert(data.detail || "Failed to save role");
       }
