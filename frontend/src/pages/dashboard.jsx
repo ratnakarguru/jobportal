@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import Navbar from "../components/navbar"; 
 
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [user,     setUser]     = useState(null);
-  const [stats,    setStats]    = useState({ total_jobs: 0, applications: 0, interviews: 0 });
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState("");
+  const [user,    setUser]    = useState(null);
+  const [stats,   setStats]   = useState({ total_jobs: 0, applications: 0, interviews: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
 
   useEffect(() => {
     const userId = localStorage.getItem("user_id");
@@ -16,16 +17,21 @@ function Dashboard() {
       navigate("/login");
       return;
     }
-    fetchDashboard(userId);
+
+    const controller = new AbortController();
+    fetchDashboard(userId, controller.signal);
+
+    return () => controller.abort(); 
   }, []);
 
-  const fetchDashboard = async (userId) => {
+  const fetchDashboard = async (userId, signal) => {
     try {
-      const res  = await fetch(`http://127.0.0.1:8000/dashboard/${userId}`);
+      const res  = await fetch(`http://127.0.0.1:8000/dashboard/${userId}`, { signal });
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.detail || "Failed to load dashboard.");
+        setLoading(false);
         return;
       }
 
@@ -35,22 +41,15 @@ function Dashboard() {
         applications: data.applications,
         interviews:   data.interviews,
       });
-    } catch (err) {
-      setError("Server error. Please try again.");
-    } finally {
       setLoading(false);
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        setError("Server error. Please try again.");
+        setLoading(false);
+      }
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
-  };
-
-  // ── Avatar initial from name ──
-  const getInitial = (name) => name ? name.charAt(0).toUpperCase() : "?";
-
-  // ── Loading State ──
   if (loading) {
     return (
       <div className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
@@ -62,7 +61,6 @@ function Dashboard() {
     );
   }
 
-  // ── Error State ──
   if (error) {
     return (
       <div className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
@@ -99,44 +97,11 @@ function Dashboard() {
 
   return (
     <div className="min-vh-100 bg-light pb-5">
-
-      {/* Navbar */}
-      <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4 py-3">
-        <div className="container-fluid">
-          <span className="navbar-brand mb-0 h1 fw-bold text-primary fs-4">
-            <i className="bi bi-briefcase-fill me-2"></i>
-            Workline
-          </span>
-
-          <div className="d-flex align-items-center gap-3">
-            <div className="d-none d-md-block text-end">
-              <p className="mb-0 fw-semibold fs-6">{user?.name}</p>
-              <small className="text-muted">{user?.email}</small>
-            </div>
-
-            {/* Avatar */}
-            <div
-              className="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center fw-bold"
-              style={{ width: "40px", height: "40px", flexShrink: 0 }}
-            >
-              {getInitial(user?.name)}
-            </div>
-
-            <div className="vr mx-2" />
-
-            <button
-              onClick={handleLogout}
-              className="btn btn-outline-danger btn-sm px-3 fw-semibold rounded-pill"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* Reusable Navbar Component */}
+      <Navbar user={user} />
 
       {/* Main Content */}
       <div className="container mt-5">
-
         {/* Welcome */}
         <div className="mb-4">
           <h2 className="fw-bold text-dark">
@@ -170,7 +135,6 @@ function Dashboard() {
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );

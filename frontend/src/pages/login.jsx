@@ -56,7 +56,7 @@ if (response.ok) {
         navigate(`/upload-resume/${userId}`);
     }
     else {
-        navigate("/dashboard");
+        navigate(`/dashboard/${userId}`);
     }
 
 }else {
