@@ -74,82 +74,123 @@ if (response.ok) {
 
   // Find the top return statement in your component and replace the outer div:
 return (
-  <div 
-    style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      minHeight: "100vh",
-      width: "100vw",
-      backgroundColor: "#f8fafc",
-      position: "fixed", // Forces it to position itself relative to the screen
-      top: 0,
-      left: 0,
-      margin: 0,
-      padding: "20px"
-    }}
-  >
-    {/* Bootstrap Card Container */}
-    <div className="card shadow-lg p-4 w-100 border-0" style={{ maxWidth: "450px", borderRadius: "1rem", backgroundColor: "#ffffff" }}>
-      
-      <div className="card-body">
-        <h2 className="text-center fw-bold text-dark mb-2">Welcome Back</h2>
-        {/* ... rest of your form code stays exactly the same ... */}
-          <p className="text-center text-muted mb-4">
-            Please enter your details to sign in
-          </p>
+    <div className="container-fluid min-vh-100 p-0" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div className="row g-0 min-vh-100">
+        
+        {/* LEFT PANEL: Branding & Taglines (Visible on Desktop) */}
+        <div 
+          className="col-lg-6 d-none d-lg-flex flex-column justify-content-between p-5 text-white"
+          style={{
+            background: "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)",
+          }}
+        >
+          {/* Top Brand Mark */}
+          <div className="d-flex align-items-center">
+            <span className="fw-bold fs-3 text-white tracking-tight">Work</span>
+            <span className="fw-bold fs-3 text-opacity-75" style={{ color: "#38bdf8" }}>line</span>
+          </div>
 
-          <form onSubmit={loginUser}>
+          {/* Middle Value Text */}
+          <div className="my-auto" style={{ maxWidth: "500px" }}>
+            <span className="badge bg-white bg-opacity-10 text-white mb-3 px-3 py-2 rounded-pill fw-semibold text-uppercase tracking-wider">
+              Now Live
+            </span>
+            <h1 className="display-4 fw-bold mb-3 tracking-tight">
+              Find your dream job layout.
+            </h1>
+            <p className="fs-5 text-white-50 lh-base">
+              Join thousands of developers tracking applications, matching parsing parameters, and landing milestone tech roles.
+            </p>
+          </div>
+
+          {/* Bottom Footer Text */}
+          <div className="small opacity-50">
+            &copy; {new Date().getFullYear()} Workline Inc. All rights reserved.
+          </div>
+        </div>
+
+        {/* RIGHT PANEL: Interactive Authentication Form */}
+        <div className="col-lg-6 d-flex align-items-center justify-content-center bg-white px-4 py-5">
+          <div className="w-100" style={{ maxWidth: "420px" }}>
             
-            {/* Email Input */}
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Email Address</label>
-              <input
-                type="email"
-                className="form-control form-control-lg"
-                placeholder="name@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+            {/* Fallback Mobile Header Branding */}
+            <div className="text-center mb-4 d-block d-lg-none">
+              <span className="fw-bold h2 text-dark tracking-tight">Work</span>
+              <span className="fw-bold h2 text-primary tracking-tight">line</span>
+              <p className="text-muted small mt-1">Find your dream job overview console</p>
             </div>
 
-            {/* Password Input */}
+            {/* Core Form Area Header */}
             <div className="mb-4">
-              <label className="form-label fw-semibold">Password</label>
-              <input
-                type="password"
-                className="form-control form-control-lg"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <h2 className="fw-bold text-dark tracking-tight mb-1">Welcome Back</h2>
+              <p className="text-muted small">Please enter your account details to sign in</p>
             </div>
 
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              className={`btn w-100 py-2 fs-5 fw-bold ${loading ? 'btn-secondary' : 'btn-primary'}`}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Signing in...
-                </>
-              ) : (
-                "Login"
-              )}
-            </button>
-          </form>
+            <form onSubmit={loginUser}>
+              {/* Email Address Field */}
+              <div className="mb-3">
+                <label className="form-label small fw-bold text-secondary text-uppercase tracking-wider">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  className="form-control form-control-lg border-2 bg-light bg-opacity-25 shadow-none rounded-3 fs-6"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-          {/* Link back to Register Route */}
-          <div className="mt-4 text-center">
-            <span className="text-muted">Don't have an account? </span>
-            <Link to="/" className="text-primary text-decoration-none fw-semibold">
-              Sign up here
-            </Link>
+              {/* Password Field */}
+              <div className="mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label className="form-label small fw-bold text-secondary text-uppercase tracking-wider mb-0">
+                    Password
+                  </label>
+                  <a href="/forgot-password" className="text-decoration-none small fw-semibold text-primary">
+                    Forgot Password?
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  className="form-control form-control-lg border-2 bg-light bg-opacity-25 shadow-none rounded-3 fs-6"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Action Button Trigger */}
+              <button 
+                type="submit" 
+                className={`btn w-100 py-2.5 rounded-3 fw-bold shadow-sm d-flex align-items-center justify-content-center transition-all ${
+                  loading ? 'btn-secondary text-white-50' : 'btn-primary'
+                }`}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Verifying Credentials...
+                  </>
+                ) : (
+                  <>
+                    Sign In <i className="bi bi-box-arrow-in-right ms-2"></i>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Switch Account Routing Route Links */}
+            <div className="mt-4 text-center border-top pt-4">
+              <span className="text-muted small">Don't have an account? </span>
+              <Link to="/" className="text-primary text-decoration-none small fw-bold ms-1">
+                Create Account
+              </Link>
+            </div>
+
           </div>
         </div>
 
@@ -157,5 +198,4 @@ return (
     </div>
   );
 }
-
 export default Login;

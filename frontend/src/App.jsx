@@ -7,6 +7,7 @@ import SelectRole from './pages/select_role';
 import ProfileSetup from './pages/profile_setup';
 import UploadResume from './pages/upload_resume';
 import Profile from './pages/profile_page';
+import JobsPage from './pages/job_page';
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path='/profile-setup/:userId' element={<ProfileSetup/>} />
         <Route path='/upload-resume/:userId' element={<UploadResume/>} />
         <Route path='/profile' element={<Profile/>} />
+        <Route path='/jobs' element={<JobsPage/>} />
       </Routes>
     </BrowserRouter>
   );

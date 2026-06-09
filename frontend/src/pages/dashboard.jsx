@@ -6,10 +6,10 @@ import Navbar from "../components/navbar";
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [user,    setUser]    = useState(null);
-  const [stats,   setStats]   = useState({ total_jobs: 0, applications: 0, interviews: 0 });
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({ total_jobs: 0, applications: 0, interviews: 0 });
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const userId = localStorage.getItem("user_id");
@@ -26,7 +26,7 @@ function Dashboard() {
 
   const fetchDashboard = async (userId, signal) => {
     try {
-      const res  = await fetch(`http://127.0.0.1:8000/dashboard/${userId}`, { signal });
+      const res = await fetch(`http://127.0.0.1:8000/dashboard/${userId}`, { signal });
       const data = await res.json();
 
       if (!res.ok) {
@@ -37,9 +37,9 @@ function Dashboard() {
 
       setUser({ name: data.name, email: data.email });
       setStats({
-        total_jobs:   data.total_jobs,
+        total_jobs: data.total_jobs,
         applications: data.applications,
-        interviews:   data.interviews,
+        interviews: data.interviews,
       });
       setLoading(false);
     } catch (err) {
@@ -55,7 +55,7 @@ function Dashboard() {
       <div className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
         <div className="text-center">
           <div className="spinner-border text-primary mb-3" role="status" />
-          <p className="text-muted">Loading your dashboard…</p>
+          <p className="text-muted fw-medium">Loading your Workline dashboard…</p>
         </div>
       </div>
     );
@@ -64,9 +64,11 @@ function Dashboard() {
   if (error) {
     return (
       <div className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
-        <div className="text-center">
-          <p className="text-danger fw-semibold">{error}</p>
-          <button className="btn btn-primary btn-sm mt-2" onClick={() => navigate("/login")}>
+        <div className="text-center shadow-sm p-5 bg-white rounded-4" style={{ maxWidth: "400px" }}>
+          <i className="bi bi-exclamation-triangle text-danger fs-1 mb-3 d-block"></i>
+          <p className="text-danger fw-semibold fs-5 mb-2">{error}</p>
+          <p className="text-muted small mb-4">We encountered an issue pulling up your profile data.</p>
+          <button className="btn btn-primary w-100 rounded-3 py-2" onClick={() => navigate("/login")}>
             Back to Login
           </button>
         </div>
@@ -76,65 +78,101 @@ function Dashboard() {
 
   const statCards = [
     {
-      label:   "Total Jobs",
-      value:   stats.total_jobs,
-      icon:    "bi-building",
-      color:   "primary",
+      label: "Total Jobs Available",
+      value: stats.total_jobs,
+      icon: "bi-briefcase-fill",
+      color: "primary",
     },
     {
-      label:   "Applications",
-      value:   stats.applications,
-      icon:    "bi-file-earmark-text",
-      color:   "success",
+      label: "Your Applications",
+      value: stats.applications,
+      icon: "bi-file-earmark-check-fill",
+      color: "success",
     },
     {
-      label:   "Interviews",
-      value:   stats.interviews,
-      icon:    "bi-calendar-check",
-      color:   "warning",
+      label: "Scheduled Interviews",
+      value: stats.interviews,
+      icon: "bi-calendar2-event-fill",
+      color: "warning",
     },
   ];
 
   return (
-    <div className="min-vh-100 bg-light pb-5">
+    <div className="min-vh-100 bg-light" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Reusable Navbar Component */}
       <Navbar user={user} />
 
-      {/* Main Content */}
-      <div className="container mt-5">
-        {/* Welcome */}
-        <div className="mb-4">
-          <h2 className="fw-bold text-dark">
-            Welcome back, {user?.name?.split(" ")[0]}! 👋
-          </h2>
-          <p className="text-muted fs-5">
-            Here is your overview for today.
-          </p>
+      {/* Main Content Area */}
+      <div className="container py-5">
+        
+        {/* Big Hero Welcome Bar */}
+        <div 
+          className="p-5 mb-5 rounded-4 text-white shadow-sm d-flex flex-column justify-content-center"
+          style={{
+            background: "linear-gradient(135deg, #2b5876 0%, #4e4376 100%)",
+            minHeight: "200px"
+          }}
+        >
+          <div className="row align-items-center">
+            <div className="col-lg-8">
+              <span className="badge bg-white bg-opacity-25 text-white mb-2 px-3 py-2 rounded-pill fw-semibold text-uppercase tracking-wider fs-7">
+                Welcome back, {user?.name?.split(" ")[0]}! 👋
+              </span>
+              <h1 className="display-5 fw-bold mb-2">Welcome to Workline</h1>
+              <p className="fs-5 opacity-75 mb-0">
+                Find your dream job, manage your applications, and track your career milestones.
+              </p>
+            </div>
+            <div className="col-lg-4 text-lg-end mt-4 mt-lg-0">
+              <button 
+                className="btn btn-light btn-lg px-4 py-3 rounded-3 fw-bold text-primary shadow-sm"
+                onClick={() => navigate("/jobs")} // Assuming /jobs is your search route
+              >
+                Explore Jobs <i className="bi bi-arrow-right ms-2"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Stat Cards */}
-        <div className="row g-4 mb-5">
+        {/* Dashboard Overview Heading */}
+        <div className="d-flex align-items-center mb-4">
+          <h4 className="fw-bold text-dark mb-0 me-3">Your Console Overview</h4>
+          <div className="flex-grow-1 border-bottom opacity-25"></div>
+        </div>
+
+        {/* Stat Cards Grid */}
+        <div className="row g-4">
           {statCards.map((card) => (
-            <div className="col-md-4" key={card.label}>
-              <div className="card border-0 shadow-sm rounded-4 h-100 p-3">
-                <div className="card-body d-flex align-items-center">
-                  <div className={`bg-${card.color} bg-opacity-10 p-3 rounded-4 me-4`}>
-                    <i className={`bi ${card.icon} text-${card.color} fs-3`}></i>
-                  </div>
+            <div className="col-md-12 col-lg-4" key={card.label}>
+              <div className="card border-0 shadow-sm rounded-4 h-100 transition-all card-hover p-2">
+                <div className="card-body d-flex align-items-center justify-content-between p-4">
                   <div>
                     <h6
-                      className="text-muted text-uppercase fw-semibold mb-1"
-                      style={{ fontSize: "0.8rem", letterSpacing: "0.5px" }}
+                      className="text-muted text-uppercase fw-bold mb-2"
+                      style={{ fontSize: "0.75rem", letterSpacing: "1px" }}
                     >
                       {card.label}
                     </h6>
-                    <h2 className="mb-0 fw-bold text-dark">{card.value}</h2>
+                    <h1 className="display-6 mb-0 fw-extrabold text-dark tracking-tight">
+                      {card.value.toLocaleString()}
+                    </h1>
+                  </div>
+                  <div className={`bg-${card.color} bg-opacity-10 p-3 rounded-4`}>
+                    <i className={`bi ${card.icon} text-${card.color} fs-2`}></i>
                   </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Quick Help Footer / Tip */}
+        <div className="text-center mt-5">
+          <p className="text-muted small">
+            Need help? Check out our <a href="/tips" className="text-decoration-none fw-medium">Job Hunting Guide</a> or update your profile visibility settings.
+          </p>
+        </div>
+
       </div>
     </div>
   );
