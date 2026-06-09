@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import Logo from "../assets/workilinlogo.png"
+import "./navbar.css";
+import { FaBell } from "react-icons/fa";
 
 function Navbar({ user }) {
   const navigate = useNavigate();
@@ -26,122 +29,180 @@ function Navbar({ user }) {
   return (
     <>
       {/* --- NAVBAR --- */}
-      <nav className="navbar navbar-expand-lg navbar-light bg-white border-b shadow-sm px-3 px-lg-4 py-2 sticky-top">
-        <div className="container-fluid">
-          {/* Branding */}
-          <Link to="/dashboard" className="navbar-brand d-flex align-items-center me-4">
-            <div className="bg-primary text-white rounded-3 p-2 d-flex align-items-center justify-content-center me-2 shadow-sm" style={{ width: "38px", height: "38px" }}>
-              <i className="bi bi-briefcase-fill fs-5"></i>
-            </div>
-            <span className="fw-bold text-dark tracking-tight fs-4">Workline</span>
-          </Link>
+      <nav className="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top py-2">
+  <div className="container-fluid px-lg-4">
 
-          {/* Toggle Button for Mobile view */}
-          <button
-            className="navbar-toggler border-0 p-2 shadow-none"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarContent"
-            aria-controls="navbarContent"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
+    {/* Logo */}
+    <Link
+      to="/dashboard"
+      className="navbar-brand d-flex align-items-center"
+    >
+      <img
+        src={Logo}
+        alt="Workline"
+        width="42"
+        height="42"
+        className="me-2"
+      />
+
+      <span
+        className="fw-bold"
+        style={{
+          fontSize: "1.75rem",
+          color: "#212529",
+          letterSpacing: "-1px",
+        }}
+      >
+        Work
+      </span>
+
+      <span
+        className="fw-semibold"
+        style={{
+          fontSize: "1.75rem",
+          color: "#0d6efd",
+          letterSpacing: "-1px",
+        }}
+      >
+        line
+      </span>
+    </Link>
+
+    {/* Mobile Toggle */}
+    <button
+      className="navbar-toggler border-0 shadow-none"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarContent"
+    >
+      <span className="navbar-toggler-icon"></span>
+    </button>
+
+    {/* Content */}
+    <div
+      className="collapse navbar-collapse"
+      id="navbarContent"
+    >
+
+      {/* Navigation */}
+      <ul className="navbar-nav ms-lg-4 me-auto gap-lg-2">
+
+        <li className="nav-item">
+          <Link
+            to="/jobs"
+            className="nav-link fw-semibold px-3 rounded"
           >
-            <span className="navbar-toggler-icon"></span>
+            <i className="bi bi-briefcase me-2"></i>
+            Jobs
+          </Link>
+        </li>
+
+        <li className="nav-item">
+          <Link
+            to="/companies"
+            className="nav-link fw-semibold px-3 rounded"
+          >
+            <i className="bi bi-buildings me-2"></i>
+            Companies
+          </Link>
+        </li>
+
+      </ul>
+
+      {/* Search */}
+      <form className="d-flex my-3 my-lg-0 mx-lg-3 w-100" style={{ maxWidth: "450px" }}>
+        <div className="input-group">
+          <span className="input-group-text bg-light border-0">
+            <i className="bi bi-search"></i>
+          </span>
+
+          <input
+            type="search"
+            className="form-control bg-light border-0 shadow-none"
+            placeholder="Search jobs, companies..."
+          />
+        </div>
+      </form>
+
+      {/* Right Side */}
+      <div className="d-flex align-items-center gap-3">
+
+        {/* Notification */}
+        <button className="btn btn-light rounded-circle">
+  <FaBell size={18} />
+
+
+        </button>
+
+        {/* Profile */}
+        <div className="dropdown">
+
+          <button
+            className="btn btn-primary rounded-circle fw-bold border-0"
+            style={{
+              width: "42px",
+              height: "42px",
+            }}
+            data-bs-toggle="dropdown"
+          >
+            {getInitial(user?.name)}
           </button>
 
-          {/* Collapsible Content */}
-          <div className="collapse navbar-collapse" id="navbarContent">
-            {/* Navigation Links */}
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0 mt-2 mt-lg-0 gap-1">
-              <li className="nav-item">
-                <Link to="/jobs" className="nav-link px-3 py-2 rounded-2 fw-medium text-secondary dynamic-nav-link">
-                  Jobs
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/companies" className="nav-link px-3 py-2 rounded-2 fw-medium text-secondary dynamic-nav-link">
-                  Companies
-                </Link>
-              </li>
-            </ul>
+          <ul className="dropdown-menu dropdown-menu-end shadow border-0">
 
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="d-flex me-lg-4 my-3 my-lg-0 col-12 col-lg-4 position-relative">
-              <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted fs-6"></i>
-              <input
-                type="search"
-                placeholder="Search jobs, companies..."
-                className="form-control ps-5 bg-light border-0 rounded-pill py-2 shadow-none transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ fontSize: "14px" }}
-              />
-            </form>
+            <li className="px-3 py-2">
+              <h6 className="mb-0 fw-bold">
+                {user?.name}
+              </h6>
 
-            {/* Right Actions: Notifications & Profile */}
-            <div className="d-flex align-items-center justify-content-between justify-content-lg-end gap-3 w-100-mobile">
-              {/* Notification Bell */}
-              <button 
-                className="btn btn-light position-relative rounded-circle p-0 d-flex align-items-center justify-content-center border" 
-                style={{ width: "40px", height: "40px" }}
-                aria-label="Notifications"
+              <small className="text-muted">
+                {user?.email}
+              </small>
+            </li>
+
+            <li><hr className="dropdown-divider" /></li>
+
+            <li>
+              <Link
+                className="dropdown-item"
+                to="/profile"
               >
-                <i className="bi bi-bell text-dark fs-5"></i>
-                <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle animate-pulse">
-                  <span className="visually-hidden">New alerts</span>
-                </span>
+                <i className="bi bi-person me-2"></i>
+                Profile
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                className="dropdown-item"
+                to="/settings"
+              >
+                <i className="bi bi-gear me-2"></i>
+                Settings
+              </Link>
+            </li>
+
+            <li><hr className="dropdown-divider" /></li>
+
+            <li>
+              <button
+                onClick={handleLogout}
+                className="dropdown-item text-danger"
+              >
+                <i className="bi bi-box-arrow-right me-2"></i>
+                Logout
               </button>
+            </li>
 
-              <div className="vr d-none d-lg-block mx-1" style={{ height: "24px" }} />
+          </ul>
 
-              {/* Clickable Profile Dropdown */}
-              <div className="dropdown">
-                <div
-                  className="bg-primary-subtle text-primary rounded-circle d-flex justify-content-center align-items-center fw-bold border border-primary-subtle shadow-sm"
-                  style={{ width: "40px", height: "40px", flexShrink: 0, cursor: "pointer" }}
-                  id="profileDropdown"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  {getInitial(user?.name)}
-                </div>
-
-                {/* Profile Dropdown Menu Options */}
-                <ul className="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2 p-2" aria-labelledby="profileDropdown" style={{ minWidth: "230px" }}>
-                  <li className="px-3 py-2.5 mb-1 bg-light rounded-2">
-                    <p className="mb-0 fw-bold text-dark text-truncate fs-6">{user?.name || "User"}</p>
-                    <small className="text-muted text-truncate d-block" style={{ fontSize: "12px" }}>{user?.email || "user@example.com"}</small>
-                  </li>
-                  <li>
-                    {/* Trigger for the Offcanvas Sidebar */}
-                    <button 
-                      className="dropdown-item py-2 rounded-2 d-flex align-items-center text-secondary fw-medium" 
-                      type="button" 
-                      data-bs-toggle="offcanvas" 
-                      data-bs-target="#profileSidebar" 
-                      aria-controls="profileSidebar"
-                    >
-                      <i className="bi bi-person me-2.5 fs-5 text-muted"></i> My Profile
-                    </button>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item py-2 rounded-2 d-flex align-items-center text-secondary fw-medium" to="/settings">
-                      <i className="bi bi-gear me-2.5 fs-5 text-muted"></i> Settings
-                    </Link>
-                  </li>
-                  <li><hr className="dropdown-divider my-2 opacity-50" /></li>
-                  <li>
-                    <button onClick={handleLogout} className="dropdown-item text-danger py-2 rounded-2 d-flex align-items-center fw-semibold">
-                      <i className="bi bi-box-arrow-right me-2.5 fs-5"></i> Logout
-                    </button>
-                  </li>
-                </ul>
-              </div>
-
-            </div>
-          </div>
         </div>
-      </nav>
+
+      </div>
+
+    </div>
+  </div>
+</nav>
 
       {/* --- OFFCANVAS SIDEBAR --- */}
       <div className="offcanvas offcanvas-end border-0 shadow" tabIndex="-1" id="profileSidebar" aria-labelledby="profileSidebarLabel" style={{ width: "360px" }}>

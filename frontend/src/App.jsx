@@ -19,7 +19,7 @@ function App() {
         <Route path="/select-role/:userId" element={<SelectRole />} />
         <Route path='/profile-setup/:userId' element={<ProfileSetup/>} />
         <Route path='/upload-resume/:userId' element={<UploadResume/>} />
-        <Route path='/profile/' element={<Profile/>} />
+        <Route path='/profile' element={<Profile/>} />
       </Routes>
     </BrowserRouter>
   );
