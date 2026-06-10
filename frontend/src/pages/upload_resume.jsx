@@ -155,7 +155,7 @@ function UploadResume() {
             </button>
           ) : (
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate(`/dashboard/${userId}`)}
               className="btn btn-success fw-bold w-100 shadow-sm"
             >
               ✓ Complete Setup

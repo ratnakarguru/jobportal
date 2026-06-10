@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float, Text, Date
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float, Text, Date, JSON
 from app.database import Base
 from sqlalchemy.orm import relationship
 
@@ -86,6 +86,7 @@ class Resume(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("candidate.id"))
     resume_file = Column(String(255))
+    parsed_data = Column(JSON)
 
     user = relationship("User")
     
