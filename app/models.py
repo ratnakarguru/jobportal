@@ -89,4 +89,24 @@ class Resume(Base):
     parsed_data = Column(JSON)
 
     user = relationship("User")
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    title = Column(String)
+    company = Column(String)
+    location = Column(String)
+    salary = Column(String)
+    experience = Column(String)
+    qualification = Column(String)
+
+    description = Column(Text)
+    responsibilities = Column(Text)
+    skills = Column(Text)
+    benefits = Column(Text)
+
+    company_about = Column(Text)
     
