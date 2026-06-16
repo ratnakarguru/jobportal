@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float, Text, Date, JSON
-from app.database import Base
+import enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float, Text, Date, JSON, Enum
 from sqlalchemy.orm import relationship
-
+from app.database import Base
 
 class User(Base):
     __tablename__ = "candidate"
@@ -11,6 +11,12 @@ class User(Base):
     email = Column(String(100), unique=True)
     password = Column(String(100))
 
+    # Added back-references for clean queries from the User instance
+    profile = relationship("Profile", back_populates="user", uselist=False)
+    roles = relationship("Role", back_populates="user")
+    resumes = relationship("Resume", back_populates="user")
+
+
 class Role(Base):
     __tablename__ = "roles"
 
@@ -18,7 +24,7 @@ class Role(Base):
     user_id = Column(Integer, ForeignKey("candidate.id"))
     role_name = Column(String(50))
 
-    user = relationship("User")
+    user = relationship("User", back_populates="roles")
 
 
 class Profile(Base):
@@ -38,12 +44,12 @@ class Profile(Base):
     portfolio_url       = Column(String(255))
  
     # ── Career Details ──────────────────────────────────────────────
-    skills              = Column(Text)
+    skills              = Column(Text)  # Stored as comma-separated text
     expected_ctc        = Column(Float)
  
     # ── Employment Status ───────────────────────────────────────────
     currently_employed  = Column(Boolean, default=False)
-    company_name        = Column(String(100))       # replaces previous_company
+    company_name        = Column(String(100))
     designation         = Column(String(100))
     emp_start_date      = Column(Date, nullable=True)
     emp_end_date        = Column(Date, nullable=True)
@@ -51,7 +57,7 @@ class Profile(Base):
     about_role          = Column(Text, nullable=True)
  
     # ── Relationships ───────────────────────────────────────────────
-    user                = relationship("User")
+    user                = relationship("User", back_populates="profile")
     education_history   = relationship(
         "EducationHistory",
         back_populates="profile",
@@ -73,12 +79,13 @@ class EducationHistory(Base):
  
     # ── Dates ───────────────────────────────────────────────────────
     start_date      = Column(Date, nullable=True)
-    end_date        = Column(Date, nullable=True)   # null when is_present=True
+    end_date        = Column(Date, nullable=True)
     is_present      = Column(Boolean, default=False)
     passout_year    = Column(Integer, nullable=True)
  
     # ── Relationship ────────────────────────────────────────────────
     profile         = relationship("Profile", back_populates="education_history")
+
 
 class Resume(Base):
     __tablename__ = "resumes"
@@ -88,25 +95,27 @@ class Resume(Base):
     resume_file = Column(String(255))
     parsed_data = Column(JSON)
 
-    user = relationship("User")
+    user = relationship("User", back_populates="resumes")
+
+
+class JobStatus(str, enum.Enum):
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
 
 
 class Job(Base):
     __tablename__ = "jobs"
 
-    id = Column(Integer, primary_key=True, index=True)
-
-    title = Column(String)
-    company = Column(String)
-    location = Column(String)
-    salary = Column(String)
-    experience = Column(String)
-    qualification = Column(String)
-
-    description = Column(Text)
-    responsibilities = Column(Text)
-    skills = Column(Text)
-    benefits = Column(Text)
-
-    company_about = Column(Text)
-    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(100), nullable=False)
+    company = Column(String(100), nullable=False)
+    location = Column(String(100), nullable=True)
+    salary = Column(String(50), nullable=True)
+    experience = Column(String(50), nullable=True)
+    qualification = Column(String(100), nullable=True)
+    description = Column(Text, nullable=True)
+    responsibilities = Column(Text, nullable=True)  # Comma-separated text
+    skills = Column(Text, nullable=True)            # Comma-separated text
+    benefits = Column(Text, nullable=True)          # Comma-separated text
+    company_about = Column(Text, nullable=True)
+    status = Column(Enum(JobStatus), default=JobStatus.OPEN)

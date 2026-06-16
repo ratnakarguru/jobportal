@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import Logo from "../assets/workilinlogo.png";
@@ -8,7 +8,16 @@ import { FaBell } from "react-icons/fa";
 
 function Navbar({ user }) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  
+  // Get current active search query string directly out of the URL parameters
+  const currentUrlQuery = searchParams.get("search") || "";
+  const [searchQuery, setSearchQuery] = useState(currentUrlQuery);
+
+  // CRITICAL FIX: Update the navbar input state whenever the tab changes or URL parameters mutate
+  useEffect(() => {
+    setSearchQuery(currentUrlQuery);
+  }, [currentUrlQuery]);
 
   const handleLogout = () => {
     // Close any open backdrops if sidebar is open during logout
@@ -21,10 +30,8 @@ function Navbar({ user }) {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      // Direct users to your job explorer with the search query parameters
-      navigate(`/jobs?search=${encodeURIComponent(searchQuery)}`);
-    }
+    // Direct users to your job explorer with the search query parameters
+    navigate(`/jobs?search=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");

@@ -33,7 +33,6 @@ def get_db():
 
 
 # ── POST /resume/{user_id} ────────────────────────────────────────────────────
-
 @router.post("/{user_id}")
 async def upload_resume(
     user_id: int,
@@ -61,7 +60,6 @@ async def upload_resume(
     # Extract text from PDF
     try:
         pdf_reader = PdfReader(BytesIO(contents))
-
         resume_text = ""
 
         for page in pdf_reader.pages:
@@ -92,13 +90,8 @@ async def upload_resume(
 
     # Generate unique filename
     ext = os.path.splitext(file.filename)[1] or ".pdf"
-
     filename = f"user_{user_id}_{uuid.uuid4().hex}{ext}"
-
-    save_path = os.path.join(
-        UPLOAD_DIR,
-        filename
-    )
+    save_path = os.path.join(UPLOAD_DIR, filename)
 
     # Save PDF
     with open(save_path, "wb") as f:
@@ -108,14 +101,12 @@ async def upload_resume(
     if existing:
         existing.resume_file = save_path
         existing.parsed_data = parsed_resume
-
     else:
         new_resume = Resume(
             user_id=user_id,
             resume_file=save_path,
             parsed_data=parsed_resume
         )
-
         db.add(new_resume)
 
     db.commit()
@@ -124,4 +115,25 @@ async def upload_resume(
         "message": "Resume uploaded successfully",
         "resume_file": save_path,
         "parsed_resume": parsed_resume
+    }
+
+
+# ── GET /resume/{user_id} ────────────────────────────────────────────────────
+# This endpoint pulls the structured parsed_data out of the database JSON column
+@router.get("/{user_id}")
+def get_resume_json(user_id: int, db: Session = Depends(get_db)):
+    resume_record = db.query(Resume).filter(Resume.user_id == user_id).first()
+    
+    if not resume_record:
+        raise HTTPException(
+            status_code=404, 
+            detail="No resume found for this candidate user profile."
+        )
+        
+    return {
+        "user_id": resume_record.user_id,
+        "resume_id": resume_record.id,
+        "file_path": resume_record.resume_file,
+        # SQLAlchemy handles Python native dict/list output automatically for JSON columns
+        "parsed_data": resume_record.parsed_data if resume_record.parsed_data else {}
     }

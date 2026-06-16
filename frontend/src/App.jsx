@@ -23,7 +23,7 @@ function App() {
         <Route path='/upload-resume/:userId' element={<UploadResume/>} />
         <Route path='/profile' element={<Profile/>} />
         <Route path='/tips' element={<TipsPage/>} />
-        <Route path='/jobs' element={<JobsPage/>} />
+        <Route path='/jobs/:userId' element={<JobsPage/>} />
       </Routes>
     </BrowserRouter>
   );
