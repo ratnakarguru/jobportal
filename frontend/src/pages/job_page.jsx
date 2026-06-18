@@ -16,6 +16,14 @@ function JobsPage() {
   const [sortBy, setSortBy] = useState("latest");
   const [selectedJob, setSelectedJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Application Submission States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [applicationSuccess, setApplicationSuccess] = useState(false);
+  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+
+  const userId = localStorage.getItem("user_id");
+  const appName = "JobSync"; // Custom App Name Variable
 
   // 1. Instantly load the authenticated profile from local storage cache memory
   useEffect(() => {
@@ -31,8 +39,10 @@ function JobsPage() {
 
   // 2. Fetch live openings from the database API collection
   useEffect(() => {
+    if (!userId) return;
+    
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/jobs/")
+    fetch(`http://127.0.0.1:8000/jobs/recommended/${userId}`)
       .then((response) => {
         if (!response.ok) throw new Error("Network response was not ok");
         return response.json();
@@ -47,7 +57,7 @@ function JobsPage() {
         console.error("Error fetching jobs from database:", error);
         setIsLoading(false);
       });
-  }, []);
+  }, [userId]); 
 
   // Sync state changes with incoming URL search params
   useEffect(() => {
@@ -83,8 +93,75 @@ function JobsPage() {
     setFilteredJobs(result);
   }, [searchTerm, selectedType, sortBy, jobs]);
 
+  // Handle Detail View Close & state cleanups
+  const handleCloseModal = () => {
+    setSelectedJob(null);
+    setApplicationSuccess(false);
+    setIsSubmitting(false);
+  };
+
+  // Connected asynchronous submission sequence
+  const applyJob = async (jobId) => {
+    const currentUserId = localStorage.getItem("user_id");
+    if (!currentUserId) {
+      alert("User authentication context missing. Please log in again.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // NOTE: If you still get a 405 error here, try changing the URL endpoint below to:
+      // "http://127.0.0.1:8000/applications/apply/" (with a trailing slash)
+      const res = await fetch("http://127.0.0.1:8000/applications/apply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: Number(currentUserId),
+          job_id: jobId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.detail || "Something went wrong during submission.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Success Path: Update local UI states and trigger animations
+      setAppliedJobIds((prev) => new Set([...prev, jobId]));
+      setApplicationSuccess(true);
+    } catch (err) {
+      console.error("Network error during application:", err);
+      alert("Failed to connect to application servers. Check your backend router.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-vh-100 bg-light" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <style>{`
+        @keyframes scaleIn {
+          0% { transform: scale(0.3); opacity: 0; }
+          50% { transform: scale(1.05); }
+          70% { transform: scale(0.9); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeInUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-scale-in { animation: scaleIn 0.5s ease-out forwards; }
+        .animate-fade-in-up { animation: fadeInUp 0.4s ease-out 0.2s forwards; opacity: 0; }
+        .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; }
+      `}</style>
+
       <Navbar user={userData} />
 
       {/* Hero Search Area Banner */}
@@ -186,54 +263,64 @@ function JobsPage() {
               </div>
             ) : (
               <div className="row g-4">
-                {filteredJobs.map((job) => (
-                  <div className="col-md-6" key={job.id || job._id}>
-                    <div className="card border-0 shadow-sm h-100 rounded-4 card-hover p-2 bg-white">
-                      <div className="card-body p-4 d-flex flex-column justify-content-between">
-                        <div>
-                          <div className="d-flex align-items-start justify-content-between mb-3">
-                            <div className="d-flex align-items-center">
-                              <div className="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: "48px", height: "48px" }}>
-                                {job.logoText || (job.company ? job.company.substring(0,2).toUpperCase() : "JB")}
-                              </div>
-                              <div>
-                                <h6 className="mb-0 fw-bold text-dark fs-6 text-truncate" style={{ maxWidth: "160px" }}>{job.title}</h6>
-                                <span className="text-muted small fw-medium">{job.company}</span>
-                              </div>
-                            </div>
-                            <span className="badge bg-light text-secondary border px-2.5 py-1.5 rounded-3 small">
-                              {job.type}
-                            </span>
+                {filteredJobs.map((job) => {
+                  const currentJobId = job.id || job._id;
+                  const hasApplied = appliedJobIds.has(currentJobId);
+                  
+                  return (
+                    <div className="col-md-6" key={currentJobId}>
+                      <div className="card border-0 shadow-sm h-100 rounded-4 card-hover p-2 bg-white position-relative overflow-hidden">
+                        {hasApplied && (
+                          <div className="position-absolute top-0 end-0 bg-success text-white small px-3 py-1 rounded-bl shadow-sm fw-bold" style={{ borderBottomLeftRadius: '12px', zIndex: 2 }}>
+                            <i className="bi bi-check2-circle me-1"></i> Applied
                           </div>
-
-                          <div className="d-flex gap-2 text-muted small mb-3 flex-wrap">
-                            <span className="bg-light px-2 py-1 rounded d-flex align-items-center"><i className="bi bi-geo-alt me-1 text-primary"></i> {job.location ? job.location.split(',')[0] : "India"}</span>
-                            <span className="bg-light px-2 py-1 rounded d-flex align-items-center"><i className="bi bi-cash-stack me-1 text-success"></i> {job.salary}</span>
-                            <span className="bg-light px-2 py-1 rounded d-flex align-items-center"><i className="bi bi-briefcase me-1 text-warning"></i> {job.experience}</span>
-                          </div>
-
-                          <div className="d-flex flex-wrap gap-1 mb-4">
-                            {job.skills && job.skills.map((skill) => (
-                              <span key={skill} className="badge bg-light text-dark fw-normal px-2.5 py-1.5 rounded-2 border">
-                                {skill}
+                        )}
+                        <div className="card-body p-4 d-flex flex-column justify-content-between">
+                          <div>
+                            <div className="d-flex align-items-start justify-content-between mb-3">
+                              <div className="d-flex align-items-center">
+                                <div className="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: "48px", height: "48px" }}>
+                                  {job.logoText || (job.company ? job.company.substring(0,2).toUpperCase() : "JB")}
+                                </div>
+                                <div>
+                                  <h6 className="mb-0 fw-bold text-dark fs-6 text-truncate" style={{ maxWidth: "160px" }}>{job.title}</h6>
+                                  <span className="text-muted small fw-medium">{job.company}</span>
+                                </div>
+                              </div>
+                              <span className="badge bg-light text-secondary border px-2.5 py-1.5 rounded-3 small">
+                                {job.type}
                               </span>
-                            ))}
-                          </div>
-                        </div>
+                            </div>
 
-                        <div className="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
-                          <span className="text-muted small fw-medium"><i className="bi bi-clock me-1"></i> {job.posted || "Recent"}</span>
-                          <button
-                            className="btn btn-primary btn-sm px-3 rounded-3 fw-bold"
-                            onClick={() => setSelectedJob(job)}
-                          >
-                            View details
-                          </button>
+                            <div className="d-flex gap-2 text-muted small mb-3 flex-wrap">
+                              <span className="bg-light px-2 py-1 rounded d-flex align-items-center"><i className="bi bi-geo-alt me-1 text-primary"></i> {job.location ? job.location.split(',')[0] : "India"}</span>
+                              <span className="bg-light px-2 py-1 rounded d-flex align-items-center"><i className="bi bi-cash-stack me-1 text-success"></i> {job.salary}</span>
+                              <span className="bg-light px-2 py-1 rounded d-flex align-items-center"><i className="bi bi-briefcase me-1 text-warning"></i> {job.experience}</span>
+                            </div>
+
+                            <div className="d-flex flex-wrap gap-1 mb-4">
+                              {job.skills && job.skills.map((skill) => (
+                                <span key={skill} className="badge bg-light text-dark fw-normal px-2.5 py-1.5 rounded-2 border">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
+                            <span className="text-muted small fw-medium"><i className="bi bi-clock me-1"></i> {job.posted || "Recent"}</span>
+                            <button
+                              className={`btn ${hasApplied ? 'btn-outline-success' : 'btn-primary'} btn-sm px-3 rounded-3 fw-bold`}
+                              onClick={() => setSelectedJob(job)}
+                            >
+                              {hasApplied ? "View Review" : "View details"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -241,11 +328,11 @@ function JobsPage() {
         </div>
       </div>
 
-      {/* Detail View Modal */}
+      {/* Detail View & Application Modal */}
       {selectedJob && (
         <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)" }}>
           <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content border-0 rounded-4 shadow-lg">
+            <div className="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
               
               <div className="modal-header bg-dark text-white p-4 align-items-start border-0 position-relative">
                 <div className="d-flex align-items-center mt-2">
@@ -261,101 +348,141 @@ function JobsPage() {
                   type="button"
                   className="btn-close btn-close-white position-absolute shadow-none"
                   style={{ top: "24px", right: "24px" }}
-                  onClick={() => setSelectedJob(null)}
+                  onClick={handleCloseModal}
+                  disabled={isSubmitting}
                 />
               </div>
 
               <div className="modal-body p-4 bg-light bg-opacity-50">
-                <div className="row g-3 mb-4">
-                  <div className="col-sm-6 col-md-3">
-                    <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
-                      <i className="bi bi-cash-stack text-success fs-4 d-block mb-1"></i>
-                      <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Annual Salary</span>
-                      <strong className="text-dark small">{selectedJob.salary}</strong>
+                {applicationSuccess || appliedJobIds.has(selectedJob.id || selectedJob._id) ? (
+                  <div className="text-center py-5 my-3 bg-white rounded-4 border p-4 shadow-sm">
+                    <div className="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle mb-4 shadow animate-scale-in" style={{ width: "80px", height: "80px" }}>
+                      <i className="bi bi-check-lg" style={{ fontSize: "3rem" }}></i>
+                    </div>
+                    <h3 className="fw-bold text-dark mb-2 animate-fade-in-up">Application Tracked!</h3>
+                    <p className="text-muted mx-auto mb-4 animate-fade-in-up" style={{ maxWidth: "420px" }}>
+                      Your profile credentials have been structured and processed securely via <strong>{appName}</strong> directly to the human resource department at <strong>{selectedJob.company}</strong>.
+                    </p>
+                    <div className="badge bg-light text-success border px-3 py-2 rounded-3 fw-bold small animate-fade-in-up shadow-sm">
+                      <i className="bi bi-shield-check me-1"></i> Routed safely via {appName} Gateway
                     </div>
                   </div>
-                  <div className="col-sm-6 col-md-3">
-                    <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
-                      <i className="bi bi-star text-warning fs-4 d-block mb-1"></i>
-                      <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Experience Needed</span>
-                      <strong className="text-dark small">{selectedJob.experience}</strong>
-                    </div>
-                  </div>
-                  <div className="col-sm-6 col-md-3">
-                    <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
-                      <i className="bi bi-mortarboard text-primary fs-4 d-block mb-1"></i>
-                      <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Qualification</span>
-                      <strong className="text-dark small">{selectedJob.qualification}</strong>
-                    </div>
-                  </div>
-                  <div className="col-sm-6 col-md-3">
-                    <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
-                      <i className="bi bi-clock text-info fs-4 d-block mb-1"></i>
-                      <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Job Format</span>
-                      <strong className="text-dark small">{selectedJob.type}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
-                  <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Role Summary</h6>
-                  <p className="text-secondary small lh-relaxed">{selectedJob.description}</p>
-                </div>
-
-                {selectedJob.responsibilities && selectedJob.responsibilities.length > 0 && (
-                  <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
-                    <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Core Responsibilities</h6>
-                    <ul className="text-secondary small ps-3 mb-0">
-                      {selectedJob.responsibilities.map((r, idx) => (
-                        <li key={idx} className="mb-2 lh-relaxed">{r}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
-                  <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Required Stack Competencies</h6>
-                  <div className="d-flex gap-2 flex-wrap mt-2">
-                    {selectedJob.skills && selectedJob.skills.map((skill) => (
-                      <span key={skill} className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-2 fw-medium small">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {selectedJob.benefits && selectedJob.benefits.length > 0 && (
-                  <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
-                    <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Perks & Benefits</h6>
-                    <div className="row g-2 mt-1">
-                      {selectedJob.benefits.map((b, idx) => (
-                        <div className="col-sm-6" key={idx}>
-                          <div className="d-flex align-items-center text-secondary small">
-                            <i className="bi bi-check-circle-fill text-success me-2"></i> {b}
-                          </div>
+                ) : (
+                  <>
+                    <div className="row g-3 mb-4">
+                      <div className="col-sm-6 col-md-3">
+                        <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
+                          <i className="bi bi-cash-stack text-success fs-4 d-block mb-1"></i>
+                          <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Annual Salary</span>
+                          <strong className="text-dark small">{selectedJob.salary}</strong>
                         </div>
-                      ))}
+                      </div>
+                      <div className="col-sm-6 col-md-3">
+                        <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
+                          <i className="bi bi-star text-warning fs-4 d-block mb-1"></i>
+                          <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Experience Needed</span>
+                          <strong className="text-dark small">{selectedJob.experience}</strong>
+                        </div>
+                      </div>
+                      <div className="col-sm-6 col-md-3">
+                        <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
+                          <i className="bi bi-mortarboard text-primary fs-4 d-block mb-1"></i>
+                          <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Qualification</span>
+                          <strong className="text-dark small">{selectedJob.qualification}</strong>
+                        </div>
+                      </div>
+                      <div className="col-sm-6 col-md-3">
+                        <div className="bg-white p-3 rounded-3 border border-light text-center shadow-sm">
+                          <i className="bi bi-clock text-info fs-4 d-block mb-1"></i>
+                          <span className="text-muted small d-block uppercase fw-bold tracking-wider" style={{ fontSize: "0.7rem" }}>Job Format</span>
+                          <strong className="text-dark small">{selectedJob.type}</strong>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                {selectedJob.companyAbout && (
-                  <div className="p-3 bg-light rounded-3 border">
-                    <h6 className="fw-bold text-dark small mb-1">About {selectedJob.company}</h6>
-                    <p className="text-muted small mb-0 lh-relaxed">{selectedJob.companyAbout}</p>
-                  </div>
+                    <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
+                      <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Role Summary</h6>
+                      <p className="text-secondary small lh-relaxed">{selectedJob.description}</p>
+                    </div>
+
+                    {selectedJob.responsibilities && selectedJob.responsibilities.length > 0 && (
+                      <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
+                        <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Core Responsibilities</h6>
+                        <ul className="text-secondary small ps-3 mb-0">
+                          {selectedJob.responsibilities.map((r, idx) => (
+                            <li key={idx} className="mb-2 lh-relaxed">{r}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
+                      <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Required Stack Competencies</h6>
+                      <div className="d-flex gap-2 flex-wrap mt-2">
+                        {selectedJob.skills && selectedJob.skills.map((skill) => (
+                          <span key={skill} className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-2 fw-medium small">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                      <div className="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
+                        <h6 className="fw-bold text-dark border-start border-primary border-3 ps-2 mb-3">Perks & Benefits</h6>
+                        <div className="row g-2 mt-1">
+                          {selectedJob.benefits.map((b, idx) => (
+                            <div className="col-sm-6" key={idx}>
+                              <div className="d-flex align-items-center text-secondary small">
+                                <i className="bi bi-check-circle-fill text-success me-2"></i> {b}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedJob.companyAbout && (
+                      <div className="p-3 bg-light rounded-3 border">
+                        <h6 className="fw-bold text-dark small mb-1">About {selectedJob.company}</h6>
+                        <p className="text-muted small mb-0 lh-relaxed">{selectedJob.companyAbout}</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
               <div className="modal-footer bg-white p-3 border-top d-flex justify-content-between align-items-center">
                 <span className="text-muted small ps-2"><i className="bi bi-calendar3 me-1"></i> Listed {selectedJob.posted || "Recent"}</span>
                 <div className="gap-2 d-flex">
-                  <button type="button" className="btn btn-light px-4 rounded-3 fw-semibold text-secondary" onClick={() => setSelectedJob(null)}>
-                    Dismiss
+                  <button 
+                    type="button" 
+                    className="btn btn-light px-4 rounded-3 fw-semibold text-secondary" 
+                    onClick={handleCloseModal}
+                    disabled={isSubmitting}
+                  >
+                    {applicationSuccess || appliedJobIds.has(selectedJob.id || selectedJob._id) ? "Close Panel" : "Dismiss"}
                   </button>
-                  <button type="button" className="btn btn-success px-4 rounded-3 fw-bold shadow-sm" onClick={() => { alert("Application sent successfully!"); setSelectedJob(null); }}>
-                    Submit Application <i className="bi bi-send ms-1"></i>
-                  </button>
+                  
+                  {!(applicationSuccess || appliedJobIds.has(selectedJob.id || selectedJob._id)) && (
+                    <button 
+                      type="button" 
+                      className="btn btn-success px-4 rounded-3 fw-bold shadow-sm d-flex align-items-center" 
+                      onClick={() => applyJob(selectedJob.id || selectedJob._id)}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          Submit Application <i className="bi bi-send ms-2"></i>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
 

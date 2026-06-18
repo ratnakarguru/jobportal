@@ -1,7 +1,8 @@
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float, Text, Date, JSON, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float, Text, Date, JSON, Enum, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "candidate"
@@ -119,3 +120,15 @@ class Job(Base):
     benefits = Column(Text, nullable=True)          # Comma-separated text
     company_about = Column(Text, nullable=True)
     status = Column(Enum(JobStatus), default=JobStatus.OPEN)
+
+class Application(Base):
+    __tablename__ = "applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"))
+    job_id = Column(Integer, ForeignKey("jobs.id"))
+
+    status = Column(String(20), default="Applied")
+
+    applied_at = Column(DateTime, default=datetime.utcnow)

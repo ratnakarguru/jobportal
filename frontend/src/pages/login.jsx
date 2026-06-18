@@ -40,6 +40,11 @@ if (response.ok) {
     // Save user id
     localStorage.setItem("user_id", userId);
 
+    localStorage.setItem("user", JSON.stringify({
+        id: userId,
+        name: data.name,
+        email: data.email
+    }));
     const statusResponse = await fetch(
       `http://127.0.0.1:8000/onboarding/status/${userId}`
     );

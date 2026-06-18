@@ -6,9 +6,20 @@ import Logo from "../assets/workilinlogo.png";
 import "./navbar.css";
 import { FaBell } from "react-icons/fa";
 
-function Navbar({ user }) {
+function Navbar({ user: propUser }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+   const [user, setUser] = useState(propUser);
+
+  useEffect(() => {
+    if (!propUser) {
+      const storedUser = localStorage.getItem("user");
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, [propUser]);
   
   // Get current active search query string directly out of the URL parameters
   const currentUrlQuery = searchParams.get("search") || "";
@@ -45,7 +56,7 @@ function Navbar({ user }) {
         <div className="container-fluid px-lg-4">
 
           {/* Logo */}
-          <Link to="/dashboard" className="navbar-brand d-flex align-items-center">
+          <Link to={`/dashboard/${userId}`} className="navbar-brand d-flex align-items-center">
             <img
               src={Logo}
               alt="Workline"
@@ -96,7 +107,7 @@ function Navbar({ user }) {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link to="/companies" className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
+                <Link to={`/companies/${userId}`} className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
                   <i className="bi bi-buildings me-2"></i>Companies
                 </Link>
               </li>
@@ -172,9 +183,14 @@ function Navbar({ user }) {
 
             {/* Quick Actions List */}
             <div className="d-grid gap-2 text-start">
-              <Link to="/profile" className="btn btn-outline-primary border-2 py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 mb-2 shadow-sm" data-bs-dismiss="offcanvas">
-                <i className="bi bi-person fs-5"></i> View Profile
-              </Link>
+              <Link
+  to={`/profile/${userId}`}
+  className="btn btn-outline-primary border-2 py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 mb-2 shadow-sm"
+  data-bs-dismiss="offcanvas"
+>
+  <i className="bi bi-person fs-5"></i>
+  View Profile
+</Link>
               
               <Link to="/settings" className="btn btn-light border py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 shadow-sm" data-bs-dismiss="offcanvas">
                 <i className="bi bi-gear fs-5 text-muted"></i> Account Settings
