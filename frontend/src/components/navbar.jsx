@@ -35,6 +35,8 @@ function Navbar({ user }) {
   };
 
   const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
+  const userId = localStorage.getItem("user_id");
+  // console.log(userId);
 
   return (
     <>
@@ -89,7 +91,7 @@ function Navbar({ user }) {
             {/* Navigation Links */}
             <ul className="navbar-nav ms-lg-4 me-auto gap-lg-1">
               <li className="nav-item">
-                <Link to="/jobs" className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
+                <Link to={`/jobs/${userId}`} className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
                   <i className="bi bi-briefcase me-2"></i>Jobs
                 </Link>
               </li>
