@@ -107,7 +107,10 @@ function Navbar({ user: propUser }) {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link to={`/companies/${userId}`} className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
+                {/* <Link to={`/companies/${userId}`} className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
+                  <i className="bi bi-buildings me-2"></i>Companies
+                </Link> */}
+                <Link to="/companies" className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
                   <i className="bi bi-buildings me-2"></i>Companies
                 </Link>
               </li>

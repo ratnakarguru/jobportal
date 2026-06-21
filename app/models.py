@@ -126,7 +126,7 @@ class Application(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("candidate.id"))
     job_id = Column(Integer, ForeignKey("jobs.id"))
 
     status = Column(String(20), default="Applied")
