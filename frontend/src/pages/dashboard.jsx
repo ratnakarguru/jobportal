@@ -6,13 +6,17 @@ import Navbar from "../components/navbar";
 function Dashboard() {
   const navigate = useNavigate();
 
+  // Component States
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({ total_jobs: 0, applications: 0, interviews: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Key Fix: Pull userId to the top level of the component scope so the JSX can see it!
+  const userId = localStorage.getItem("user_id");
+
   useEffect(() => {
-    const userId = localStorage.getItem("user_id");
+    // If the token isn't in local storage, kick them back to login immediately
     if (!userId) {
       navigate("/login");
       return;
@@ -22,11 +26,11 @@ function Dashboard() {
     fetchDashboard(userId, controller.signal);
 
     return () => controller.abort(); 
-  }, []);
+  }, [userId, navigate]); // Added standard router dependencies
 
-  const fetchDashboard = async (userId, signal) => {
+  const fetchDashboard = async (currentUserId, signal) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/dashboard/${userId}`, { signal });
+      const res = await fetch(`http://127.0.0.1:8000/dashboard/${currentUserId}`, { signal });
       const data = await res.json();
 
       if (!res.ok) {
@@ -99,10 +103,8 @@ function Dashboard() {
 
   return (
     <div className="min-vh-100 bg-light" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Reusable Navbar Component */}
       <Navbar user={user} />
 
-      {/* Main Content Area */}
       <div className="container py-5">
         
         {/* Big Hero Welcome Bar */}
@@ -124,9 +126,10 @@ function Dashboard() {
               </p>
             </div>
             <div className="col-lg-4 text-lg-end mt-4 mt-lg-0">
+              {/* Working Navigation Trigger */}
               <button 
                 className="btn btn-light btn-lg px-4 py-3 rounded-3 fw-bold text-primary shadow-sm"
-                onClick={() => navigate("/jobs")} // Assuming /jobs is your search route
+                onClick={() => navigate(`/jobs/${userId}`)} 
               >
                 Explore Jobs <i className="bi bi-arrow-right ms-2"></i>
               </button>
@@ -166,7 +169,7 @@ function Dashboard() {
           ))}
         </div>
 
-        {/* Quick Help Footer / Tip */}
+        {/* Quick Help Footer */}
         <div className="text-center mt-5">
           <p className="text-muted small">
             Need help? Check out our <a href="/tips" className="text-decoration-none fw-medium">Job Hunting Guide</a> or update your profile visibility settings.

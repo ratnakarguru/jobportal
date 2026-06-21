@@ -132,3 +132,11 @@ class Application(Base):
     status = Column(String(20), default="Applied")
 
     applied_at = Column(DateTime, default=datetime.utcnow)
+
+class Company(Base):
+    __tablename__ = "companies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_name = Column(String(100))
+    company_about = Column(Text)
+    status = Column(String(20))

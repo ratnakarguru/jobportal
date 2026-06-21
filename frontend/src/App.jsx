@@ -10,6 +10,7 @@ import Profile from './pages/profile_page';
 import JobsPage from './pages/job_page';
 import TipsPage from './pages/tips';
 import Companies from './pages/companies';
+import TrackerPage from './pages/job_track';
 
 
 function App() {
@@ -25,7 +26,8 @@ function App() {
         <Route path='/profile' element={<Profile/>} />
         <Route path='/tips' element={<TipsPage/>} />
         <Route path='/jobs/:userId' element={<JobsPage/>} />
-        <Route path='/companies/' element={<Companies/>} />
+        <Route path='/companies' element={<Companies/>} />
+        <Route path='/job_track' element={<TrackerPage/>} />
       </Routes>
     </BrowserRouter>
   );

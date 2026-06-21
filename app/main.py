@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app.models import Base
 
-from app.routers import auth, users, onboarding , roles , profile , resumes ,dashboard , jobs, application
+from app.routers import auth, users, onboarding , roles , profile , resumes ,dashboard , jobs, application, company
 
 
 app = FastAPI()
@@ -28,6 +28,7 @@ app.include_router(resumes.router)
 app.include_router(dashboard.router)
 app.include_router(jobs.router)
 app.include_router(application.router)
+app.include_router(company.router)
 
 
 @app.get("/")
