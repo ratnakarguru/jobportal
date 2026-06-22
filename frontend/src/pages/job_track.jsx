@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Navbar from "../components/navbar";
 
 function TrackerPage() {
   const navigate = useNavigate();
 
   // Component States
-  const [userData, setUserData] = useState(null);
   const [applications, setApplications] = useState([]);
   const [filteredApps, setFilteredApps] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,16 +14,8 @@ function TrackerPage() {
 
   const userId = localStorage.getItem("user_id");
 
-  // 1. Instantly load authentication data cache
+  // 1. Instantly enforce authorization authentication boundaries
   useEffect(() => {
-    const cachedUser = localStorage.getItem("user");
-    if (cachedUser) {
-      try {
-        setUserData(JSON.parse(cachedUser));
-      } catch (e) {
-        console.error("Error decoding local user payload:", e);
-      }
-    }
     if (!userId) {
       navigate("/login");
     }
@@ -36,6 +26,7 @@ function TrackerPage() {
     if (!userId) return;
 
     setIsLoading(true);
+    // Pointing to your FastAPI application retrieval route matching parameters
     fetch(`http://127.0.0.1:8000/applications/user/${userId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Network response was not ok");
@@ -63,11 +54,11 @@ function TrackerPage() {
 
     if (searchTerm.trim() !== "") {
       const query = searchTerm.toLowerCase();
-      result = result.filter(
-        (app) =>
-          (app.job_title && app.job_title.toLowerCase().includes(query)) ||
-          (app.company && app.company.toLowerCase().includes(query))
-      );
+      result = result.filter((app) => {
+        const title = (app.job_title || app.title || "").toLowerCase();
+        const comp = (app.company || "").toLowerCase();
+        return title.includes(query) || comp.includes(query);
+      });
     }
 
     setFilteredApps(result);
@@ -92,7 +83,6 @@ function TrackerPage() {
     }
   };
 
-  // Compute metric distribution metrics for the pipeline summary row
   const countByStatus = (statusStr) => applications.filter((a) => a.status?.toLowerCase() === statusStr.toLowerCase()).length;
 
   return (
@@ -105,7 +95,7 @@ function TrackerPage() {
         .metric-pill:hover { transform: scale(1.02); }
       `}</style>
 
-      <Navbar user={userData} />
+      {/* Navbar is handled globally by Layout wrapper route */}
 
       {/* Page Title & Dashboard Heading */}
       <div className="bg-dark text-white py-4 mb-5 shadow-sm">
@@ -115,7 +105,8 @@ function TrackerPage() {
               <h1 className="fw-bold tracking-tight mb-1 fs-2">Application Tracker</h1>
               <p className="text-white-50 mb-0 small">Monitor review status updates, coding rounds, and response histories.</p>
             </div>
-            <button className="btn btn-primary btn-sm rounded-3 px-3 fw-bold mt-2 mt-sm-0" onClick={() => navigate(`/jobs/${userId}`)}>
+            {/* Cleaned parameterless application route path link shortcut */}
+            <button className="btn btn-primary btn-sm rounded-3 px-3 fw-bold mt-2 mt-sm-0" onClick={() => navigate("/jobs")}>
               <i className="bi bi-plus-lg me-1"></i> Apply For More Roles
             </button>
           </div>
@@ -186,6 +177,9 @@ function TrackerPage() {
           <div className="row g-4">
             {filteredApps.map((app) => {
               const appStyles = getStatusBadgeStyles(app.status);
+              const displayTitle = app.job_title || app.title || "Engineering Track";
+              const displayCompany = app.company || "Corporate Partner";
+
               return (
                 <div className="col-md-6 col-lg-4" key={app.id || app._id}>
                   <div className="card tracking-card h-100 p-3 rounded-4 bg-white d-flex flex-column justify-content-between">
@@ -194,11 +188,11 @@ function TrackerPage() {
                       <div className="d-flex align-items-start justify-content-between mb-3">
                         <div className="d-flex align-items-center overflow-hidden">
                           <div className="bg-light border text-secondary rounded-3 d-flex align-items-center justify-content-center fw-bold me-3" style={{ width: "44px", height: "44px", flexShrink: 0 }}>
-                            {app.company ? app.company.substring(0, 2).toUpperCase() : "JB"}
+                            {displayCompany.substring(0, 2).toUpperCase()}
                           </div>
                           <div className="overflow-hidden">
-                            <h6 className="mb-0 fw-bold text-dark text-truncate" title={app.job_title || app.title}>{app.job_title || app.title}</h6>
-                            <span className="text-muted small fw-medium">{app.company}</span>
+                            <h6 className="mb-0 fw-bold text-dark text-truncate" title={displayTitle}>{displayTitle}</h6>
+                            <span className="text-muted small fw-medium text-truncate d-block">{displayCompany}</span>
                           </div>
                         </div>
                         <span className={`badge px-2.5 py-1.5 rounded-3 small fw-semibold border-0 ${appStyles.bg}`}>
@@ -223,8 +217,8 @@ function TrackerPage() {
 
                     {/* Footer Action Links */}
                     <div className="pt-2 border-top d-flex align-items-center justify-content-between text-muted small">
-                      <span>Ref ID: #{String(app.id || app._id).substring(0, 5)}</span>
-                      <button className="btn btn-link btn-sm text-primary text-decoration-none fw-bold p-0" onClick={() => navigate(`/company/${encodeURIComponent(app.company)}`)}>
+                      <span>Ref ID: #{String(app.id || app._id || "00000").substring(0, 5)}</span>
+                      <button className="btn btn-link btn-sm text-primary text-decoration-none fw-bold p-0" onClick={() => navigate(`/company/${encodeURIComponent(displayCompany)}`)}>
                         Workspace Overview <i className="bi bi-chevron-right small ms-0.5"></i>
                       </button>
                     </div>

@@ -10,14 +10,12 @@ function Navbar({ user: propUser }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  // 1. Initialize state directly from localStorage so it loads instantly on page shifts
   const [user, setUser] = useState(() => {
     if (propUser) return propUser;
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // 2. CRITICAL FIX: Keep internal state synchronized if propUser arrives later dynamically
   useEffect(() => {
     if (propUser) {
       setUser(propUser);
@@ -29,7 +27,6 @@ function Navbar({ user: propUser }) {
     }
   }, [propUser]);
   
-  // Listen for storage events (fixes dynamic updates across quick tab switching)
   useEffect(() => {
     const handleStorageChange = () => {
       const storedUser = localStorage.getItem("user");
@@ -48,9 +45,25 @@ function Navbar({ user: propUser }) {
     setSearchQuery(currentUrlQuery);
   }, [currentUrlQuery]);
 
+  // CRITICAL CLEANUP HELPER: Force dismisses all active Bootstrap panels and backdrops
+  const closeSidebarAndNavigate = (targetPath) => {
+    // 1. Remove stuck dark backdrop overlays
+    const backdrops = document.querySelectorAll(".offcanvas-backdrop");
+    backdrops.forEach((backdrop) => backdrop.remove());
+
+    // 2. Restore normal scrolling to the page body
+    document.body.style.overflow = "";
+    document.body.style.paddingRight = "";
+    document.body.removeAttribute("data-bs-padding-right");
+
+    // 3. Programmatically navigate via React Router
+    navigate(targetPath);
+  };
+
   const handleLogout = () => {
     const backdrops = document.querySelectorAll(".offcanvas-backdrop");
     backdrops.forEach((backdrop) => backdrop.remove());
+    document.body.style.overflow = "";
     
     localStorage.clear();
     navigate("/login");
@@ -63,7 +76,6 @@ function Navbar({ user: propUser }) {
 
   const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
   
-  // 3. Extract the active userID safely from the user object state directly
   const userId = user?.id || localStorage.getItem("user_id");
 
   return (
@@ -86,7 +98,6 @@ function Navbar({ user: propUser }) {
 
           {/* Content Wrapper */}
           <div className="collapse navbar-collapse" id="navbarContent">
-            {/* Navigation Links */}
             <ul className="navbar-nav ms-lg-4 me-auto gap-lg-1">
               <li className="nav-item">
                 <Link to="/jobs" className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
@@ -116,7 +127,6 @@ function Navbar({ user: propUser }) {
 
             {/* Right Side Control Panel */}
             <div className="d-flex align-items-center gap-3 justify-content-between w-100-mobile">
-              {/* Notification Button */}
               <button className="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center position-relative" style={{ width: "42px", height: "42px" }}>
                 <FaBell size={18} className="text-secondary" />
                 <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle animate-pulse">
@@ -124,7 +134,6 @@ function Navbar({ user: propUser }) {
                 </span>
               </button>
 
-              {/* Connected Avatar Triggering Offcanvas Sidebar */}
               <button
                 className="btn btn-primary rounded-circle fw-bold border-0 shadow-sm p-0 d-flex align-items-center justify-content-center"
                 style={{ width: "42px", height: "42px" }}
@@ -150,12 +159,10 @@ function Navbar({ user: propUser }) {
         
         <div className="offcanvas-body p-4 d-flex flex-column justify-content-between">
           <div className="text-center mt-3">
-            {/* Big Profile Avatar */}
             <div className="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center fw-bold mx-auto shadow-sm mb-3 fs-1" style={{ width: "90px", height: "90px" }}>
               {getInitial(user?.name)}
             </div>
             
-            {/* Name & Email Details */}
             <h4 className="fw-bold text-dark mb-1">{user?.name || "User Name"}</h4>
             <p className="text-muted fs-6 mb-4">{user?.email || "user@example.com"}</p>
             
@@ -163,17 +170,23 @@ function Navbar({ user: propUser }) {
 
             {/* Quick Actions List */}
             <div className="d-grid gap-2 text-start">
-              <Link to="/profile" className="btn btn-outline-primary border-2 py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 mb-2 shadow-sm" data-bs-dismiss="offcanvas">
+              {/* FIXED LINK INTERCEPTION ROUTE CHANNELS */}
+              <button 
+                onClick={() => closeSidebarAndNavigate("/profile")} 
+                className="btn btn-outline-primary border-2 py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 mb-2 shadow-sm"
+              >
                 <i className="bi bi-person fs-5"></i> View Profile
-              </Link>
+              </button>
               
-              <Link to="/settings" className="btn btn-light border py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 shadow-sm" data-bs-dismiss="offcanvas">
+              <button 
+                onClick={() => closeSidebarAndNavigate("/settings")} 
+                className="btn btn-light border py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 shadow-sm"
+              >
                 <i className="bi bi-gear fs-5 text-muted"></i> Account Settings
-              </Link>
+              </button>
             </div>
           </div>
 
-          {/* Bottom Logout Button */}
           <div className="mt-auto pt-4 border-top">
             <button onClick={handleLogout} className="btn btn-label-danger w-100 py-2.5 rounded-3 d-flex align-items-center justify-content-center fw-bold gap-2">
               <i className="bi bi-box-arrow-right fs-5"></i> Logout Account
@@ -182,7 +195,6 @@ function Navbar({ user: propUser }) {
         </div>
       </div>
 
-      {/* --- EXTRA STYLES --- */}
       <style>{`
         .dynamic-nav-link { transition: all 0.2s ease; }
         .dynamic-nav-link:hover { background-color: #f8f9fa; color: #0d6efd !important; }

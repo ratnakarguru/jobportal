@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-# 1. CRITICAL FIX: Imported User model alongside Job
-from app.models import Job, User, Resume
+# CRITICAL FIX: Imported Application model along with User, Job, and Resume
+from app.models import Job, User, Resume, Application 
+# Assuming you have an ApplicationCreate schema for the apply endpoint
+from app.schemas import ApplicationCreate 
 
 router = APIRouter(
     prefix="/jobs",
@@ -61,10 +63,7 @@ def get_jobs(db: Session = Depends(get_db)):
 
 @router.get("/recommended/{user_id}")
 def get_recommended_jobs(user_id: int, db: Session = Depends(get_db)):
-
-    resume = db.query(Resume).filter(
-        Resume.user_id == user_id
-    ).first()
+    resume = db.query(Resume).filter(Resume.user_id == user_id).first()
 
     if not resume:
         raise HTTPException(
@@ -73,32 +72,19 @@ def get_recommended_jobs(user_id: int, db: Session = Depends(get_db)):
         )
 
     parsed_data = resume.parsed_data or {}
-
-    resume_skills = [
-        skill.lower()
-        for skill in parsed_data.get("skills", [])
-    ]
+    resume_skills = [skill.lower() for skill in parsed_data.get("skills", [])]
 
     all_jobs = db.query(Job).all()
-
     matched_jobs = []
 
     for job in all_jobs:
-
         job_skills = []
-
         if job.skills:
-            job_skills = [
-                skill.strip().lower()
-                for skill in job.skills.split(",")
-            ]
+            job_skills = [skill.strip().lower() for skill in job.skills.split(",")]
 
-        matched_count = len(
-            set(resume_skills).intersection(set(job_skills))
-        )
+        matched_count = len(set(resume_skills).intersection(set(job_skills)))
 
         if matched_count > 0:
-
             matched_jobs.append({
                 "id": job.id,
                 "title": job.title,
@@ -112,14 +98,12 @@ def get_recommended_jobs(user_id: int, db: Session = Depends(get_db)):
                 "match_count": matched_count
             })
 
-    matched_jobs.sort(
-        key=lambda x: x["match_count"],
-        reverse=True
-    )
-
+    matched_jobs.sort(key=lambda x: x["match_count"], reverse=True)
     return matched_jobs
 
-@router.get("/{user_id}")
+
+# CRITICAL ROUTE ROUTING FIX: Changed prefix or target to match dashboard frontend fetch perfectly
+@router.get("/dashboard/{user_id}")
 def get_dashboard(user_id: int, db: Session = Depends(get_db)):
     try:
         user = db.query(User).filter(User.id == user_id).first()
@@ -127,12 +111,24 @@ def get_dashboard(user_id: int, db: Session = Depends(get_db)):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
+        # DYNAMIC CALCULATION FIX: Pulling actual live database counts!
+        total_jobs_count = db.query(Job).count()
+        
+        applications_count = db.query(Application).filter(
+            Application.user_id == user_id
+        ).count()
+        
+        interviews_count = db.query(Application).filter(
+            Application.user_id == user_id,
+            Application.status == "Interview"  # Adjust match string based on your database naming
+        ).count()
+
         return {
             "name": user.name,
             "email": user.email,
-            "total_jobs": 0,
-            "applications": 0,
-            "interviews": 0,
+            "total_jobs": total_jobs_count,
+            "applications": applications_count,
+            "interviews": interviews_count,
         }
     except Exception as e:
         print(f"Dashboard Fetch Error: {e}")
@@ -141,7 +137,6 @@ def get_dashboard(user_id: int, db: Session = Depends(get_db)):
 
 @router.post("/apply")
 def apply_job(data: ApplicationCreate, db: Session = Depends(get_db)):
-
     existing = db.query(Application).filter(
         Application.user_id == data.user_id,
         Application.job_id == data.job_id

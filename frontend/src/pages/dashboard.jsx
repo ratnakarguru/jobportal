@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Navbar from "../components/navbar"; 
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -12,11 +11,10 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Key Fix: Pull userId to the top level of the component scope so the JSX can see it!
   const userId = localStorage.getItem("user_id");
 
   useEffect(() => {
-    // If the token isn't in local storage, kick them back to login immediately
+    // If the authentication keys aren't present, kick back to login immediately
     if (!userId) {
       navigate("/login");
       return;
@@ -26,7 +24,7 @@ function Dashboard() {
     fetchDashboard(userId, controller.signal);
 
     return () => controller.abort(); 
-  }, [userId, navigate]); // Added standard router dependencies
+  }, [userId, navigate]);
 
   const fetchDashboard = async (currentUserId, signal) => {
     try {
@@ -80,30 +78,34 @@ function Dashboard() {
     );
   }
 
+  // Card items config containing custom interactive path mappings
   const statCards = [
     {
       label: "Total Jobs Available",
       value: stats.total_jobs,
       icon: "bi-briefcase-fill",
       color: "primary",
+      path: "/jobs", // Dynamic redirect link parameter
     },
     {
       label: "Your Applications",
       value: stats.applications,
       icon: "bi-file-earmark-check-fill",
       color: "success",
+      path: "/job_track", // Redirects to tracking page layout
     },
     {
       label: "Scheduled Interviews",
       value: stats.interviews,
       icon: "bi-calendar2-event-fill",
       color: "warning",
+      path: null, // Keep static or link elsewhere if needed later
     },
   ];
 
   return (
     <div className="min-vh-100 bg-light" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* <Navbar user={user} /> */}
+      {/* Navbar is handled globally by Layout wrapper route */}
 
       <div className="container py-5">
         
@@ -126,10 +128,10 @@ function Dashboard() {
               </p>
             </div>
             <div className="col-lg-4 text-lg-end mt-4 mt-lg-0">
-              {/* Working Navigation Trigger */}
+              {/* Cleaned parameter-less dynamic routing route action */}
               <button 
                 className="btn btn-light btn-lg px-4 py-3 rounded-3 fw-bold text-primary shadow-sm"
-                onClick={() => navigate(`/jobs/${userId}`)} 
+                onClick={() => navigate("/jobs")} 
               >
                 Explore Jobs <i className="bi bi-arrow-right ms-2"></i>
               </button>
@@ -147,7 +149,11 @@ function Dashboard() {
         <div className="row g-4">
           {statCards.map((card) => (
             <div className="col-md-12 col-lg-4" key={card.label}>
-              <div className="card border-0 shadow-sm rounded-4 h-100 transition-all card-hover p-2">
+              <div 
+                className="card border-0 shadow-sm rounded-4 h-100 transition-all card-hover p-2"
+                onClick={() => card.path && navigate(card.path)}
+                style={{ cursor: card.path ? "pointer" : "default" }}
+              >
                 <div className="card-body d-flex align-items-center justify-content-between p-4">
                   <div>
                     <h6
@@ -177,6 +183,17 @@ function Dashboard() {
         </div>
 
       </div>
+
+      {/* Embedded Pointer Hover Interactive CSS Adjustments */}
+      <style>{`
+        .card-hover {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card-hover:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+        }
+      `}</style>
     </div>
   );
 }

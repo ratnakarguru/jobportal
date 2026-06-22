@@ -23,7 +23,6 @@ def apply_job(
     data: ApplicationCreate,
     db: Session = Depends(get_db)
 ):
-
     existing = db.query(Application).filter(
         Application.user_id == data.user_id,
         Application.job_id == data.job_id
@@ -49,9 +48,9 @@ def apply_job(
     }
 
 
-@router.get("/{user_id}")
+# ROUTE PATH FIX: Changed from "/{user_id}" to "/user/{user_id}" to fix the 404 error
+@router.get("/user/{user_id}")
 def get_applications(user_id: int, db: Session = Depends(get_db)):
-
     results = (
         db.query(Application, Job)
         .join(Job, Application.job_id == Job.id)
@@ -66,7 +65,7 @@ def get_applications(user_id: int, db: Session = Depends(get_db)):
             "title": job.title,
             "company": job.company,
             "status": app.status,
-            "applied_at": app.applied_at
+            "applied_at": getattr(app, "applied_at", "Recent") # using getattr fallback in case column name varies
         }
         for app, job in results
     ]
