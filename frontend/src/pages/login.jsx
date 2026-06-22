@@ -1,9 +1,6 @@
 import { useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
-
-import { Link } from "react-router-dom"; 
-import { useNavigate } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom"; 
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -31,43 +28,32 @@ function Login() {
         body: JSON.stringify(loginData),
       });
 
-     const data = await response.json();
+      const data = await response.json();
 
+      // Inside your Login.jsx component after a successful login response:
 if (response.ok) {
+    const userObj = data.user;
+    const userId = userObj?.id;
 
-    const userId = data.user_id;
-
-    // Save user id
     localStorage.setItem("user_id", userId);
+    localStorage.setItem("user", JSON.stringify(userObj));
 
-    localStorage.setItem("user", JSON.stringify({
-        id: userId,
-        name: data.name,
-        email: data.email
-    }));
-    const statusResponse = await fetch(
-      `http://127.0.0.1:8000/onboarding/status/${userId}`
-    );
-
+    const statusResponse = await fetch(`http://127.0.0.1:8000/onboarding/status/${userId}`);
     const status = await statusResponse.json();
 
+    // Redirect directly to the clean static route paths
     if (!status.role_completed) {
-        navigate(`/select-role/${userId}`);
+        navigate("/select-role");
+    } else if (!status.profile_completed) {
+        navigate("/profile-setup");
+    } else if (!status.resume_completed) {
+        navigate("/upload-resume");
+    } else {
+        navigate("/dashboard");
     }
-    else if (!status.profile_completed) {
-        navigate(`/profile-setup/${userId}`);
-    }
-    else if (!status.resume_completed) {
-        navigate(`/upload-resume/${userId}`);
-    }
-    else {
-        navigate(`/dashboard/${userId}`);
-    }
-
-}else {
-
-    alert(data.detail || "Invalid email or password.");
-}
+} else {
+        alert(data.detail || "Invalid email or password.");
+      }
 
     } catch (error) {
       console.error("Login Error:", error);
@@ -77,8 +63,7 @@ if (response.ok) {
     }
   }
 
-  // Find the top return statement in your component and replace the outer div:
-return (
+  return (
     <div className="container-fluid min-vh-100 p-0" style={{ fontFamily: "'Inter', sans-serif" }}>
       <div className="row g-0 min-vh-100">
         
@@ -203,4 +188,5 @@ return (
     </div>
   );
 }
+
 export default Login;

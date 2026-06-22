@@ -9,29 +9,46 @@ import { FaBell } from "react-icons/fa";
 function Navbar({ user: propUser }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-   const [user, setUser] = useState(propUser);
+  
+  // 1. Initialize state directly from localStorage so it loads instantly on page shifts
+  const [user, setUser] = useState(() => {
+    if (propUser) return propUser;
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
+  // 2. CRITICAL FIX: Keep internal state synchronized if propUser arrives later dynamically
   useEffect(() => {
-    if (!propUser) {
+    if (propUser) {
+      setUser(propUser);
+    } else {
       const storedUser = localStorage.getItem("user");
-
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     }
   }, [propUser]);
   
-  // Get current active search query string directly out of the URL parameters
+  // Listen for storage events (fixes dynamic updates across quick tab switching)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   const currentUrlQuery = searchParams.get("search") || "";
   const [searchQuery, setSearchQuery] = useState(currentUrlQuery);
 
-  // CRITICAL FIX: Update the navbar input state whenever the tab changes or URL parameters mutate
   useEffect(() => {
     setSearchQuery(currentUrlQuery);
   }, [currentUrlQuery]);
 
   const handleLogout = () => {
-    // Close any open backdrops if sidebar is open during logout
     const backdrops = document.querySelectorAll(".offcanvas-backdrop");
     backdrops.forEach((backdrop) => backdrop.remove());
     
@@ -41,13 +58,13 @@ function Navbar({ user: propUser }) {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Direct users to your job explorer with the search query parameters
     navigate(`/jobs?search=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
-  const userId = localStorage.getItem("user_id");
-  // console.log(userId);
+  
+  // 3. Extract the active userID safely from the user object state directly
+  const userId = user?.id || localStorage.getItem("user_id");
 
   return (
     <>
@@ -56,60 +73,27 @@ function Navbar({ user: propUser }) {
         <div className="container-fluid px-lg-4">
 
           {/* Logo */}
-          <Link to={`/dashboard/${userId}`} className="navbar-brand d-flex align-items-center">
-            <img
-              src={Logo}
-              alt="Workline"
-              width="42"
-              height="42"
-              className="me-2"
-            />
-            <span
-              className="fw-bold"
-              style={{
-                fontSize: "1.75rem",
-                color: "#212529",
-                letterSpacing: "-1px",
-              }}
-            >
-              Work
-            </span>
-            <span
-              className="fw-semibold"
-              style={{
-                fontSize: "1.75rem",
-                color: "#0d6efd",
-                letterSpacing: "-1px",
-              }}
-            >
-              line
-            </span>
+          <Link to="/dashboard" className="navbar-brand d-flex align-items-center">
+            <img src={Logo} alt="Workline" width="42" height="42" className="me-2" />
+            <span className="fw-bold" style={{ fontSize: "1.75rem", color: "#212529", letterSpacing: "-1px" }}>Work</span>
+            <span className="fw-semibold" style={{ fontSize: "1.75rem", color: "#0d6efd", letterSpacing: "-1px" }}>line</span>
           </Link>
 
           {/* Mobile Toggle */}
-          <button
-            className="navbar-toggler border-0 shadow-none"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarContent"
-          >
+          <button className="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
             <span className="navbar-toggler-icon"></span>
           </button>
 
           {/* Content Wrapper */}
           <div className="collapse navbar-collapse" id="navbarContent">
-
             {/* Navigation Links */}
             <ul className="navbar-nav ms-lg-4 me-auto gap-lg-1">
               <li className="nav-item">
-                <Link to={`/jobs/${userId}`} className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
+                <Link to="/jobs" className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
                   <i className="bi bi-briefcase me-2"></i>Jobs
                 </Link>
               </li>
               <li className="nav-item">
-                {/* <Link to={`/companies/${userId}`} className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
-                  <i className="bi bi-buildings me-2"></i>Companies
-                </Link> */}
                 <Link to="/companies" className="nav-link dynamic-nav-link text-dark fw-semibold px-3 py-2 rounded">
                   <i className="bi bi-buildings me-2"></i>Companies
                 </Link>
@@ -119,9 +103,7 @@ function Navbar({ user: propUser }) {
             {/* Interactive Search Bar */}
             <form onSubmit={handleSearch} className="d-flex my-3 my-lg-0 mx-lg-3 w-100" style={{ maxWidth: "450px" }}>
               <div className="input-group">
-                <span className="input-group-text bg-light border-0 text-muted">
-                  <i className="bi bi-search"></i>
-                </span>
+                <span className="input-group-text bg-light border-0 text-muted"><i className="bi bi-search"></i></span>
                 <input
                   type="search"
                   value={searchQuery}
@@ -134,7 +116,6 @@ function Navbar({ user: propUser }) {
 
             {/* Right Side Control Panel */}
             <div className="d-flex align-items-center gap-3 justify-content-between w-100-mobile">
-
               {/* Notification Button */}
               <button className="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center position-relative" style={{ width: "42px", height: "42px" }}>
                 <FaBell size={18} className="text-secondary" />
@@ -146,10 +127,7 @@ function Navbar({ user: propUser }) {
               {/* Connected Avatar Triggering Offcanvas Sidebar */}
               <button
                 className="btn btn-primary rounded-circle fw-bold border-0 shadow-sm p-0 d-flex align-items-center justify-content-center"
-                style={{
-                  width: "42px",
-                  height: "42px",
-                }}
+                style={{ width: "42px", height: "42px" }}
                 type="button"
                 data-bs-toggle="offcanvas"
                 data-bs-target="#profileSidebar"
@@ -157,7 +135,6 @@ function Navbar({ user: propUser }) {
               >
                 {getInitial(user?.name)}
               </button>
-
             </div>
 
           </div>
@@ -186,14 +163,9 @@ function Navbar({ user: propUser }) {
 
             {/* Quick Actions List */}
             <div className="d-grid gap-2 text-start">
-              <Link
-  to={`/profile/${userId}`}
-  className="btn btn-outline-primary border-2 py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 mb-2 shadow-sm"
-  data-bs-dismiss="offcanvas"
->
-  <i className="bi bi-person fs-5"></i>
-  View Profile
-</Link>
+              <Link to="/profile" className="btn btn-outline-primary border-2 py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 mb-2 shadow-sm" data-bs-dismiss="offcanvas">
+                <i className="bi bi-person fs-5"></i> View Profile
+              </Link>
               
               <Link to="/settings" className="btn btn-light border py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 shadow-sm" data-bs-dismiss="offcanvas">
                 <i className="bi bi-gear fs-5 text-muted"></i> Account Settings
@@ -212,34 +184,13 @@ function Navbar({ user: propUser }) {
 
       {/* --- EXTRA STYLES --- */}
       <style>{`
-        .dynamic-nav-link {
-          transition: all 0.2s ease;
-        }
-        .dynamic-nav-link:hover {
-          background-color: #f8f9fa;
-          color: #0d6efd !important;
-        }
-        @media (max-width: 991.98px) {
-          .w-100-mobile { width: 100%; mt: 10px; }
-        }
-        .btn-label-danger {
-          background-color: #fff5f5;
-          color: #dc3545;
-          border: 1px solid #fee2e2;
-          transition: all 0.2s ease;
-        }
-        .btn-label-danger:hover {
-          background-color: #dc3545;
-          color: #ffffff;
-        }
-        .animate-pulse {
-          animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.4); opacity: 0.6; }
-          100% { transform: scale(1); opacity: 1; }
-        }
+        .dynamic-nav-link { transition: all 0.2s ease; }
+        .dynamic-nav-link:hover { background-color: #f8f9fa; color: #0d6efd !important; }
+        @media (max-width: 991.98px) { .w-100-mobile { width: 100%; margin-top: 10px; } }
+        .btn-label-danger { background-color: #fff5f5; color: #dc3545; border: 1px solid #fee2e2; transition: all 0.2s ease; }
+        .btn-label-danger:hover { background-color: #dc3545; color: #ffffff; }
+        .animate-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } 100% { transform: scale(1); opacity: 1; } }
       `}</style>
     </>
   );

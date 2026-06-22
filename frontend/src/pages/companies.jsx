@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Navbar from "../components/navbar";
 
-function Companies() {
+// Added userData as a prop here to resolve the ReferenceError
+function Companies({ userData = null }) {
   const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,7 +51,10 @@ function Companies() {
           border: 1px solid rgba(13, 110, 253, 0.15);
         }
       `}</style>
-
+      
+      {/* Now safely receives userData from props */}
+      {/* <Navbar user={userData} /> */}
+      
       {/* Dark Modern Split Header Banner */}
       <div className="premium-bg text-white py-5 mb-5 shadow-sm">
         <div className="container py-3">
@@ -103,8 +108,9 @@ function Companies() {
               const initials = company.logoText || name.substring(0, 2).toUpperCase();
               const openPositions = company.jobCount || Math.floor(Math.random() * 8) + 2;
 
+              {/* Fixed using a unique identifier if available, or name as fallback */}
               return (
-                <div className="col-md-6 col-lg-4" key={name}>
+                <div className="col-md-6 col-lg-4" key={company.id || name}>
                   {/* Modern Asymmetric Link Card */}
                   <Link 
                     to={`/company/${encodeURIComponent(name)}`}

@@ -103,7 +103,7 @@ function Dashboard() {
 
   return (
     <div className="min-vh-100 bg-light" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Navbar user={user} />
+      {/* <Navbar user={user} /> */}
 
       <div className="container py-5">
         

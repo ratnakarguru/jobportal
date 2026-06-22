@@ -162,7 +162,7 @@ function JobsPage() {
         .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; }
       `}</style>
 
-      <Navbar user={userData} />
+      {/* <Navbar user={userData} /> */}
 
       {/* Hero Search Area Banner */}
       <div className="bg-dark text-white py-5 mb-5 shadow-sm">
