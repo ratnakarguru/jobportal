@@ -1,6 +1,6 @@
 import { useState } from "react";
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { Link, useNavigate } from "react-router-dom"; 
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -30,28 +30,29 @@ function Login() {
 
       const data = await response.json();
 
-      // Inside your Login.jsx component after a successful login response:
-if (response.ok) {
-    const userObj = data.user;
-    const userId = userObj?.id;
+      if (response.ok) {
+        const userObj = data.user;
+        const userId = userObj?.id;
 
-    localStorage.setItem("user_id", userId);
-    localStorage.setItem("user", JSON.stringify(userObj));
+        // Secure active user state caches locally
+        localStorage.setItem("user_id", userId);
+        localStorage.setItem("user", JSON.stringify(userObj));
 
-    const statusResponse = await fetch(`http://127.0.0.1:8000/onboarding/status/${userId}`);
-    const status = await statusResponse.json();
+        // Evaluate user onboarding status milestones
+        const statusResponse = await fetch(`http://127.0.0.1:8000/onboarding/status/${userId}`);
+        const status = await statusResponse.json();
 
-    // Redirect directly to the clean static route paths
-    if (!status.role_completed) {
-        navigate("/select-role");
-    } else if (!status.profile_completed) {
-        navigate("/profile-setup");
-    } else if (!status.resume_completed) {
-        navigate("/upload-resume");
-    } else {
-        navigate("/dashboard");
-    }
-} else {
+        // Redirect directly to the parameter-free clean path channels
+        if (!status.role_completed) {
+          navigate("/select-role");
+        } else if (!status.profile_completed) {
+          navigate("/profile-setup");
+        } else if (!status.resume_completed) {
+          navigate("/upload-resume");
+        } else {
+          navigate("/dashboard");
+        }
+      } else {
         alert(data.detail || "Invalid email or password.");
       }
 

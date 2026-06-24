@@ -109,12 +109,12 @@ const styles = `
     letter-spacing: 0.08em; text-transform: uppercase;
     color: #3b5bdb; background: #eef1ff; padding: 3px 10px; border-radius: 999px;
   }
-  .ps-btn-remove {
+  .ps-field -remove {
     font-size: 0.78rem; color: #ef4444; background: #fef2f2;
     border: none; padding: 3px 10px; border-radius: 999px; cursor: pointer;
     font-family: 'DM Sans', sans-serif; font-weight: 500;
   }
-  .ps-btn-remove:hover { background: #fee2e2; }
+  .ps-field -remove:hover { background: #fee2e2; }
   .ps-add-edu-btn {
     width: 100%; border: 1.5px dashed #748ffc; background: #eef1ff;
     color: #3b5bdb; font-family: 'Sora', sans-serif; font-size: 0.8rem; font-weight: 600;
@@ -219,7 +219,6 @@ function ProfileSetup() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
 
-  // Inject styles once
   useEffect(() => {
     const id = "ps-styles";
     if (!document.getElementById(id)) {
@@ -241,6 +240,7 @@ function ProfileSetup() {
     } catch (err) {
       console.error("Error fetching user:", err);
     } finally {
+      setOriginalIsFetching(false);
       setIsFetching(false);
     }
   };
@@ -305,8 +305,13 @@ function ProfileSetup() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (res.ok) navigate(`/upload-resume/${userId}`, { state: { role } });
-      else alert(data.detail || "Failed to save profile");
+      
+      // CRITICAL METRIC DYNAMIC ROUTING REPAIR: Excluded /${userId} parameters
+      if (res.ok) {
+        navigate("/upload-resume", { state: { role } });
+      } else {
+        alert(data.detail || "Failed to save profile");
+      }
     } catch (err) {
       console.error(err);
       alert("Server error. Please try again later.");
@@ -377,7 +382,7 @@ function ProfileSetup() {
                 <div className="ps-edu-block-header">
                   <span className="ps-edu-tag">Institution #{idx + 1}</span>
                   {educationList.length > 1 && (
-                    <button type="button" className="ps-btn-remove" onClick={() => removeEducation(idx)}>Remove</button>
+                    <button type="button" className="ps-field -remove" onClick={() => removeEducation(idx)}>Remove</button>
                   )}
                 </div>
                 <div className="ps-grid-2" style={{ gap: 14 }}>

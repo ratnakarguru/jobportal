@@ -21,24 +21,30 @@ function Register() {
     const userData = { name, email, password };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/users", {
+      // Pointing directly to your clean FastAPI authentication router path
+      const response = await fetch("http://127.0.0.1:8000/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
       });
 
-      if (!response.ok) throw new Error("Failed to create user.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to create user account profile.");
+      }
 
       alert("User Created Successfully!");
       setName(""); 
       setEmail(""); 
       setPassword("");
       
-      // Navigate to your onboarding / login channel
+      // Route directly to your clean static login page layout
       navigate("/login"); 
 
     } catch (error) {
-      alert("Something went wrong connecting to the server.");
+      console.error("Registration operational error:", error);
+      alert(error.message || "Something went wrong connecting to the backend engine.");
     } finally {
       setLoading(false);
     }
@@ -80,7 +86,7 @@ function Register() {
           </div>
         </div>
 
-        {/* RIGHT PANEL: Interactive Registration Entry Sheet Form */}
+        {/* RIGHT PANEL: Interactive Registration Form */}
         <div className="col-lg-6 d-flex align-items-center justify-content-center bg-white px-4 py-5">
           <div className="w-100" style={{ maxWidth: "420px" }}>
             
@@ -98,7 +104,6 @@ function Register() {
             </div>
 
             <form onSubmit={createUser}>
-              
               {/* Full Name Parameter Field */}
               <div className="mb-3">
                 <label className="form-label small fw-bold text-secondary text-uppercase tracking-wider">
