@@ -14,6 +14,8 @@ import TrackerPage from './pages/job_track';
 
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout'; 
+import RecruiterSetup from './pages/RecruiterSetup';
+import RecruiterDashboard from './pages/RecruiterDashboard';
 
 function App() {
   return (
@@ -23,13 +25,16 @@ function App() {
           {/* Auth routes */}
           <Route path="/" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/recruiter_setup" element={<RecruiterSetup />} />
+          <Route path="/recruiter_dashboard" element={<RecruiterDashboard />} />
 
           {/* Cleaned Global Nav Layout Wrapper (No more /:userId clutter!) */}
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/select-role" element={<SelectRole />} />
+          <Route path="/select-role" element={<SelectRole />} />
             <Route path='/profile-setup' element={<ProfileSetup/>} />
             <Route path='/upload-resume' element={<UploadResume/>} />
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            
             <Route path='/profile' element={<Profile/>} />
             <Route path='/tips' element={<TipsPage/>} />
             <Route path='/jobs' element={<JobsPage/>} />

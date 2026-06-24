@@ -10,33 +10,30 @@ function Navbar({ user: propUser }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  const [user, setUser] = useState(() => {
-    if (propUser) return propUser;
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
+  const [user, setUser] = useState(null);
+  const userId = localStorage.getItem("user_id");
 
+  // CRITICAL IDENTITY SYNC FIX: Fetch live user account details from backend on load/account shift
   useEffect(() => {
-    if (propUser) {
-      setUser(propUser);
-    } else {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    }
-  }, [propUser]);
-  
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    if (!userId) return;
+
+    const fetchLiveUser = async () => {
+      try {
+        // Hitting your verified authentication profile endpoint
+        const res = await fetch(`http://127.0.0.1:8000/auth/user/${userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+          // Keep localStorage up-to-date with the fresh profile row
+          localStorage.setItem("user", JSON.stringify(data));
+        }
+      } catch (err) {
+        console.error("Failed to sync navbar profile session identity:", err);
       }
     };
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+
+    fetchLiveUser();
+  }, [userId, propUser]); // Triggers fresh query immediately if userId shifts (logout/login switch)
 
   const currentUrlQuery = searchParams.get("search") || "";
   const [searchQuery, setSearchQuery] = useState(currentUrlQuery);
@@ -45,18 +42,14 @@ function Navbar({ user: propUser }) {
     setSearchQuery(currentUrlQuery);
   }, [currentUrlQuery]);
 
-  // CRITICAL CLEANUP HELPER: Force dismisses all active Bootstrap panels and backdrops
   const closeSidebarAndNavigate = (targetPath) => {
-    // 1. Remove stuck dark backdrop overlays
     const backdrops = document.querySelectorAll(".offcanvas-backdrop");
     backdrops.forEach((backdrop) => backdrop.remove());
 
-    // 2. Restore normal scrolling to the page body
     document.body.style.overflow = "";
     document.body.style.paddingRight = "";
     document.body.removeAttribute("data-bs-padding-right");
 
-    // 3. Programmatically navigate via React Router
     navigate(targetPath);
   };
 
@@ -65,7 +58,9 @@ function Navbar({ user: propUser }) {
     backdrops.forEach((backdrop) => backdrop.remove());
     document.body.style.overflow = "";
     
+    // Complete drop-wipe of all state cache scopes
     localStorage.clear();
+    setUser(null);
     navigate("/login");
   };
 
@@ -75,8 +70,6 @@ function Navbar({ user: propUser }) {
   };
 
   const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
-  
-  const userId = user?.id || localStorage.getItem("user_id");
 
   return (
     <>
@@ -170,7 +163,6 @@ function Navbar({ user: propUser }) {
 
             {/* Quick Actions List */}
             <div className="d-grid gap-2 text-start">
-              {/* FIXED LINK INTERCEPTION ROUTE CHANNELS */}
               <button 
                 onClick={() => closeSidebarAndNavigate("/profile")} 
                 className="btn btn-outline-primary border-2 py-2 px-3 rounded-3 d-flex align-items-center justify-content-center fw-semibold gap-2 mb-2 shadow-sm"

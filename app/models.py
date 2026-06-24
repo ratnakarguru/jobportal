@@ -29,7 +29,7 @@ class Role(Base):
 
 
 class Profile(Base):
-    __tablename__ = "profiles"
+    __tablename__ = "job_profiles"
  
     # ── Primary & Foreign Keys ──────────────────────────────────────
     id                  = Column(Integer, primary_key=True, index=True)
@@ -71,7 +71,7 @@ class EducationHistory(Base):
  
     # ── Primary & Foreign Keys ──────────────────────────────────────
     id              = Column(Integer, primary_key=True, index=True)
-    profile_id      = Column(Integer, ForeignKey("profiles.id"))
+    profile_id      = Column(Integer, ForeignKey("job_profiles.id"))
  
     # ── Institution Details ─────────────────────────────────────────
     college_name    = Column(String(200))

@@ -7,10 +7,13 @@ function UploadResume() {
   const navigate = useNavigate();
   const role = location.state?.role || "candidate";
 
-  const [file,       setFile]       = useState(null);
-  const [uploading,  setUploading]  = useState(false);
-  const [uploaded,   setUploaded]   = useState(false);
-  const [error,      setError]      = useState("");
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState(false);
+  const [error, setError] = useState("");
+
+  // FIX 1: Pulled to top-level component scope so the success button can read it safely
+  const userId = localStorage.getItem("user_id");
 
   const handleFileChange = (e) => {
     setError("");
@@ -23,7 +26,6 @@ function UploadResume() {
   const handleUpload = async () => {
     if (!file) return;
 
-    const userId = localStorage.getItem("user_id");
     if (!userId) {
       setError("Session expired. Please log in again.");
       return;
@@ -137,7 +139,6 @@ function UploadResume() {
             Back
           </button>
 
-          {/* Upload button → swaps to Complete Setup after success */}
           {!uploaded ? (
             <button
               onClick={handleUpload}
@@ -154,8 +155,9 @@ function UploadResume() {
               )}
             </button>
           ) : (
+            /* FIX 2: Modified path navigation to target the clean static dashboard url */
             <button
-              onClick={() => navigate(`/dashboard/${userId}`)}
+              onClick={() => navigate("/dashboard")}
               className="btn btn-success fw-bold w-100 shadow-sm"
             >
               ✓ Complete Setup

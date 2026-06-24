@@ -109,12 +109,12 @@ const styles = `
     letter-spacing: 0.08em; text-transform: uppercase;
     color: #3b5bdb; background: #eef1ff; padding: 3px 10px; border-radius: 999px;
   }
-  .ps-field -remove {
+  .ps-field-remove {
     font-size: 0.78rem; color: #ef4444; background: #fef2f2;
     border: none; padding: 3px 10px; border-radius: 999px; cursor: pointer;
     font-family: 'DM Sans', sans-serif; font-weight: 500;
   }
-  .ps-field -remove:hover { background: #fee2e2; }
+  .ps-field-remove:hover { background: #fee2e2; }
   .ps-add-edu-btn {
     width: 100%; border: 1.5px dashed #748ffc; background: #eef1ff;
     color: #3b5bdb; font-family: 'Sora', sans-serif; font-size: 0.8rem; font-weight: 600;
@@ -195,6 +195,10 @@ const styles = `
     .ps-card { padding: 24px 16px 36px; }
     .ps-progress-header { padding: 16px 16px 0; }
   }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const defaultEdu = () => ({
@@ -234,13 +238,13 @@ function ProfileSetup() {
     const userId = localStorage.getItem("user_id");
     if (!userId) { setIsFetching(false); return; }
     try {
-      const res = await fetch(`http://127.0.0.1:8000/users/${userId}`);
+      const res = await fetch(`http://127.0.0.1:8000/auth/user/${userId}`);
       const data = await res.json();
       setFormData(prev => ({ ...prev, fullName: data.name || "" }));
     } catch (err) {
       console.error("Error fetching user:", err);
     } finally {
-      setOriginalIsFetching(false);
+      // FIX: Removed the undefined setOriginalIsFetching invocation that crashed your runtime
       setIsFetching(false);
     }
   };
@@ -306,7 +310,6 @@ function ProfileSetup() {
       });
       const data = await res.json();
       
-      // CRITICAL METRIC DYNAMIC ROUTING REPAIR: Excluded /${userId} parameters
       if (res.ok) {
         navigate("/upload-resume", { state: { role } });
       } else {
@@ -329,7 +332,6 @@ function ProfileSetup() {
   return (
     <div className="ps-root">
       <div className="ps-wrap">
-        {/* Progress Header */}
         <div className="ps-progress-header">
           <div className="ps-step-meta">
             <span className="ps-step-badge">Profile Setup</span>
@@ -338,7 +340,6 @@ function ProfileSetup() {
           <div className="ps-progress-track"><div className="ps-progress-fill" /></div>
         </div>
 
-        {/* Card */}
         <div className="ps-card">
           <div className="ps-card-header">
             <h2>Complete Your Profile</h2>
@@ -346,7 +347,6 @@ function ProfileSetup() {
           </div>
 
           <form onSubmit={handleSubmit}>
-
             {/* ── 1. Personal Details ── */}
             <div className="ps-section">
               <span className="ps-section-label">Personal Details</span>
@@ -382,7 +382,7 @@ function ProfileSetup() {
                 <div className="ps-edu-block-header">
                   <span className="ps-edu-tag">Institution #{idx + 1}</span>
                   {educationList.length > 1 && (
-                    <button type="button" className="ps-field -remove" onClick={() => removeEducation(idx)}>Remove</button>
+                    <button type="button" className="ps-field-remove" onClick={() => removeEducation(idx)}>Remove</button>
                   )}
                 </div>
                 <div className="ps-grid-2" style={{ gap: 14 }}>
