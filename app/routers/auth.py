@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 from app.database import SessionLocal
-from app.models import User
+from app.models import User, Profile  # 💡 Imported Profile model
 from app.schemas import UserCreate, Login
 from app.utils import hash_password, verify_password
 
@@ -88,7 +88,7 @@ def login(user: Login, db: Session = Depends(get_db)):
     }
 
 
-# Dynamic Fetch Profile API (Used by your Navbar Layout)
+# Dynamic Fetch Profile API (Used by your Navbar Layout — Pulls from User AND Profile tables)
 @router.get("/user/{user_id}")
 def get_user_profile(user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
@@ -98,22 +98,26 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
             status_code=404,
             detail="User profile not found"
         )
+    
+    # 💡 Fetch the profile row linked to this user from job_profiles table
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
         
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
-        "phone": getattr(user, "phone", ""),
-        "bio": getattr(user, "bio", ""),
-        "profile_photo": getattr(user, "profile_photo", ""),
-        "company_name": getattr(user, "company_name", ""),
-        "job_title": getattr(user, "job_title", ""),
-        "education_school": getattr(user, "education_school", ""),
-        "education_degree": getattr(user, "education_degree", "")
+        # Pull parameters safely from the associated profile row if it exists
+        "phone": getattr(profile, "phone", "") if profile else "",
+        "bio": getattr(profile, "about_role", "") if profile else "",  # maps to your column 'about_role'
+        "profile_photo": getattr(profile, "profile_photo", "") if profile else "",
+        "company_name": getattr(profile, "company_name", "") if profile else "",
+        "job_title": getattr(profile, "designation", "") if profile else "",  # maps to your column 'designation'
+        "education_school": getattr(profile, "education_school", "") if profile else "",
+        "education_degree": getattr(profile, "education_degree", "") if profile else ""
     }
 
 
-# Profile Update API (NEW: Matches your frontend Profile.jsx save operations!)
+# Profile Update API (Updates both User and Profile tables safely)
 @router.put("/user/update/{user_id}")
 def update_user_profile(user_id: int, profile_data: ProfileUpdate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
@@ -124,7 +128,7 @@ def update_user_profile(user_id: int, profile_data: ProfileUpdate, db: Session =
             detail="User not found"
         )
 
-    # Make sure we don't duplicate emails across accounts when updating fields
+    # Prevent email duplication across separate identity rows
     email_check = db.query(User).filter(User.email == profile_data.email, User.id != user_id).first()
     if email_check:
         raise HTTPException(
@@ -132,16 +136,25 @@ def update_user_profile(user_id: int, profile_data: ProfileUpdate, db: Session =
             detail="Email address is already in use by another user profile."
         )
 
-    # Dynamic column synchronization updates matching active inputs
+    # 1. Update Core User Registration details
     user.name = profile_data.name
     user.email = profile_data.email
-    user.phone = profile_data.phone
-    user.bio = profile_data.bio
-    user.profile_photo = profile_data.profile_photo
-    user.company_name = profile_data.company_name
-    user.job_title = profile_data.job_title
-    user.education_school = profile_data.education_school
-    user.education_degree = profile_data.education_degree
+
+    # 2. Look up or initialize the associated Profile table entry
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+    
+    if not profile:
+        # If no profile row exists yet, create one on the fly
+        profile = Profile(user_id=user_id)
+        db.add(profile)
+
+    # 3. Synchronize incoming inputs with correct profile table columns
+    profile.full_name = profile_data.name
+    profile.phone = profile_data.phone
+    profile.about_role = profile_data.bio         # Mapped to 'about_role' in models.py
+    profile.profile_photo = profile_data.profile_photo
+    profile.company_name = profile_data.company_name
+    profile.designation = profile_data.job_title    # Mapped to 'designation' in models.py
 
     db.commit()
     db.refresh(user)
