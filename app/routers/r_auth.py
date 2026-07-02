@@ -1,53 +1,40 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from app.database import get_db 
-from app.models import Role, User
-from app.utils import verify_password  # Ensure you import your password utility
+from app.models import User, Profile 
+from app.utils import hash_password, verify_password
 
 router = APIRouter(
-    prefix="/auth",  # Optional: Groups it with your auth paths
-    tags=["Recruiter Authentication & Management"]
+    prefix="/auth",
+    tags=["Split Portal Authentication Engine"]
 )
 
-# ── REQUEST SCHEMAS ──
-class RoleSelection(BaseModel):
-    role_name: str  # Will receive "recruiter" or "candidate"
+# ── REQUEST & VALIDATION SCHEMAS ──
+class AuthPayload(BaseModel):
+    email: EmailStr
+    password: str
 
-class RecruiterLoginPayload(BaseModel):
+class RegisterPayload(BaseModel):
+    name: str
     email: EmailStr
     password: str
 
 
-# ── EXISTING ROLE ASSIGNMENT ENDPOINT ──
-@router.post("/select-role/{user_id}")
-def assign_user_role(user_id: int, role_data: RoleSelection, db: Session = Depends(get_db)):
-    # Verify user exists first
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User target not found in records.")
+@router.post("/candidate/register")
+def register_candidate(payload: RegisterPayload, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == payload.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="This email address is already registered.")
 
-    # Check if a role is already mapped to prevent duplicates
-    existing_role = db.query(Role).filter(Role.user_id == user_id).first()
-    if existing_role:
-        existing_role.role_name = role_data.role_name
-        db.commit()
-        return {"message": "User role updated successfully", "role": existing_role.role_name}
-
-    # Initialize and attach the fresh corporate/jobseeker identity
-    new_role = Role(
-        user_id=user_id,
-        role_name=role_data.role_name
+    new_candidate = User(
+        name=payload.name,
+        email=payload.email,
+        password=hash_password(payload.password)
     )
-    db.add(new_role)
+    db.add(new_candidate)
     db.commit()
-    db.refresh(new_role)
-
-    return {
-        "message": "Role configured successfully",
-        "role": new_role.role_name
-    }
-
+    return {"message": "Candidate account compiled successfully."}
 
 # ── DEDICATED RECRUITER PORTAL AUTHENTICATION API ──
 @router.post("/recruiter/login")
