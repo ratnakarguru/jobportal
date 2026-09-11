@@ -2,6 +2,14 @@ from pydantic import BaseModel
 from datetime import date
 from typing import Optional, List
 
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
 class UserCreate(BaseModel):
     name: str
     email: str

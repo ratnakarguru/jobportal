@@ -1,316 +1,608 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  FaUser,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaTools,
+  FaLinkedin,
+  FaGlobe,
+  FaBriefcase,
+  FaGraduationCap,
+  FaFileAlt,
+  FaEdit,
+  FaArrowLeft,
+  FaEnvelope,
+} from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-function Profile() {
+export default function Profile() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
 
-  // Local profile state including new Company and Education fields
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    bio: "",
-    profile_photo: "",
-    company_name: "",
-    job_title: "",
-    education_school: "",
-    education_degree: ""
-  });
+  const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const userId = localStorage.getItem("user_id");
 
   useEffect(() => {
-    const userId = localStorage.getItem("user_id");
     if (!userId) {
       navigate("/login");
       return;
     }
-    fetchProfile(userId);
-  }, []);
 
-  const fetchProfile = async (userId) => {
+    fetchProfile();
+  }, [userId]);
+
+  const fetchProfile = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/dashboard/${userId}`);
-      const data = await res.json();
+      setLoading(true);
 
-      if (!res.ok) {
-        setError(data.detail || "Failed to load profile details.");
-        return;
+      // Get user details
+      const userResponse = await fetch(
+        `http://127.0.0.1:8000/users/${userId}`
+      );
+
+      if (!userResponse.ok) {
+        throw new Error("Unable to fetch user details");
       }
 
-      setFormData({
-        name: data.name || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        bio: data.bio || "",
-        profile_photo: data.profile_photo || "",
-        company_name: data.company_name || "",
-        job_title: data.job_title || "",
-        education_school: data.education_school || "",
-        education_degree: data.education_degree || ""
-      });
+      const userData = await userResponse.json();
+      setUser(userData);
+
+      // Get profile details
+      const profileResponse = await fetch(
+        `http://127.0.0.1:8000/profiles/${userId}`
+      );
+
+      if (!profileResponse.ok) {
+        throw new Error("Unable to fetch profile details");
+      }
+
+      const profileData = await profileResponse.json();
+      setProfile(profileData);
+
     } catch (err) {
-      setError("Failed to fetch data from the server.");
+      console.error(err);
+      setError("Unable to load profile details.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Dynamic Profile Completeness Tracker
-  const completionPercentage = (() => {
-    const fields = [
-      formData.name, formData.email, formData.phone, formData.bio, 
-      formData.profile_photo, formData.company_name, formData.job_title,
-      formData.education_school, formData.education_degree
-    ];
-    const filledFields = fields.filter(field => field && field.toString().trim() !== "").length;
-    return Math.round((filledFields / fields.length) * 100);
-  })();
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const goToDashboard = () => {
+    navigate(`/dashboard/${userId}`);
   };
 
-  // Dedicated prompt handler for changing profile photo directly
-  const handlePhotoEdit = () => {
-    const newUrl = prompt("Enter new Profile Image URL:", formData.profile_photo);
-    if (newUrl !== null) {
-      setFormData({ ...formData, profile_photo: newUrl });
-    }
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccessMsg("");
-    const userId = localStorage.getItem("user_id");
-
-    try {
-      const res = await fetch(`http://127.0.0.1:8000/profile/update/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.detail || "Failed to update profile.");
-      }
-
-      setSuccessMsg("Profile updated successfully!");
-      setIsEditing(false);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("user_id");
-    navigate("/login");
+  const editProfile = () => {
+    navigate(`/profile-setup/${userId}`);
   };
 
   if (loading) {
     return (
-      <div className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
-        <div className="spinner-border text-primary" role="status" />
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-danger">{error}</div>
+
+        <button className="btn btn-primary" onClick={goToDashboard}>
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-warning">
+          Profile information not available.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bg-light min-vh-100">
-      {/* 1. Global Navbar Component */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+
+      {/* NAVBAR */}
+      <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow">
         <div className="container">
-          <span className="navbar-brand fw-bold cursor-pointer" onClick={() => navigate("/dashboard")}>
-            <i className="bi bi-layers-half me-2"></i>EnterprisePortal
+
+          <span
+            className="navbar-brand fw-bold"
+            style={{ cursor: "pointer" }}
+            onClick={goToDashboard}
+          >
+            Workline
           </span>
-          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span className="navbar-toggler-icon"></span>
+
+          <button
+            className="btn btn-light"
+            onClick={goToDashboard}
+          >
+            <FaArrowLeft className="me-2" />
+            Dashboard
           </button>
-          <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
-            <ul className="navbar-nav align-items-center gap-2">
-              <li className="nav-item">
-                <button className="btn btn-sm btn-link nav-link text-white-50" onClick={() => navigate("/dashboard")}>Dashboard</button>
-              </li>
-              <li className="nav-item">
-                <button className="btn btn-sm btn-outline-danger rounded-pill px-3 text-white" onClick={handleLogout}>Logout</button>
-              </li>
-            </ul>
-          </div>
+
         </div>
       </nav>
 
-      <div className="container py-5" style={{ maxWidth: "1100px" }}>
-        
-        {/* Navigation Action */}
-        <button className="btn btn-link text-decoration-none text-muted mb-4 p-0" onClick={() => navigate(-1)}>
-          <i className="bi bi-arrow-left me-2"></i>Back to Dashboard
-        </button>
+      {/* MAIN */}
+      <div className="container py-5">
 
-        <div className="row g-4">
-          {/* Card Left: Profile Avatar with Pencil Icon Overlay & Progress Indicator */}
-          <div className="col-lg-4">
-            <div className="card border-0 shadow-sm rounded-4 text-center p-4 sticky-lg-top" style={{ top: "90px", zIndex: 10 }}>
-              <div className="d-flex justify-content-center mb-3">
-                <div className="position-relative">
-                  {formData.profile_photo ? (
-                    <img 
-                      src={formData.profile_photo} 
-                      alt="Profile" 
-                      className="rounded-circle border img-thumbnail"
-                      style={{ width: "120px", height: "120px", objectFit: "cover" }}
-                    />
-                  ) : (
-                    <div 
-                      className="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center fw-bold shadow"
-                      style={{ width: "120px", height: "120px", fontSize: "2.8rem" }}
-                    >
-                      {formData.name ? formData.name.charAt(0).toUpperCase() : "?"}
-                    </div>
-                  )}
-                  {/* Inline Pencil Change Overlay Action */}
-                  <button 
-                    type="button" 
-                    onClick={handlePhotoEdit}
-                    className="position-absolute bottom-0 end-0 bg-dark text-white border-0 rounded-circle d-flex align-items-center justify-content-center shadow-sm hover-opacity"
-                    style={{ width: "34px", height: "34px", transform: "translate(-5%, -5%)" }}
-                    title="Change Profile Picture"
+        {/* PROFILE HEADER */}
+        <div className="card shadow-sm border-0 mb-4">
+          <div className="card-body p-4">
+
+            <div className="row align-items-center">
+
+              <div className="col-md-8">
+
+                <div className="d-flex align-items-center">
+
+                  <div
+                    className="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center me-3"
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      fontSize: "32px",
+                    }}
                   >
-                    <i className="bi bi-pencil-fill small text-white"></i>
-                  </button>
-                </div>
-              </div>
-              <h4 className="fw-bold mb-1">{formData.name || "User Name"}</h4>
-              <p className="text-muted small mb-3">{formData.email}</p>
+                    <FaUser />
+                  </div>
 
-              {/* Progress Tracking Bar UI */}
-              <div className="mt-2 text-start">
-                <div className="d-flex justify-content-between mb-1 small fw-semibold text-secondary">
-                  <span>Profile Completion</span>
-                  <span>{completionPercentage}%</span>
+                  <div>
+                    <h2 className="fw-bold mb-1">
+                      {profile.full_name || user?.name || "User"}
+                    </h2>
+
+                    <p className="text-muted mb-1">
+                      {profile.designation || "Candidate"}
+                    </p>
+
+                    <p className="text-muted mb-0">
+                      <FaEnvelope className="me-2" />
+                      {user?.email || "Not available"}
+                    </p>
+                  </div>
+
                 </div>
-                <div className="progress rounded-pill" style={{ height: "8px" }}>
-                  <div 
-                    className={`progress-bar rounded-pill bg-${completionPercentage === 100 ? "success" : "primary"}`} 
-                    role="progressbar" 
-                    style={{ width: `${completionPercentage}%` }} 
-                  />
-                </div>
+
               </div>
+
+              <div className="col-md-4 text-md-end mt-3 mt-md-0">
+
+                <button
+                  className="btn btn-primary px-4"
+                  onClick={editProfile}
+                >
+                  <FaEdit className="me-2" />
+                  Edit Profile
+                </button>
+
+              </div>
+
             </div>
-          </div>
 
-          {/* Card Right: All Editable Form Information */}
-          <div className="col-lg-8">
-            <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h5 className="fw-bold text-dark m-0">Personal Information</h5>
-                {!isEditing && (
-                  <button className="btn btn-outline-primary btn-sm px-3 rounded-pill fw-semibold" onClick={() => setIsEditing(true)}>
-                    <i className="bi bi-pencil-square me-1"></i> Edit Profile
-                  </button>
-                )}
-              </div>
-
-              {error && <div className="alert alert-danger py-2 fs-6">{error}</div>}
-              {successMsg && <div className="alert alert-success py-2 fs-6">{successMsg}</div>}
-
-              <form onSubmit={handleSave}>
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold text-muted">Full Name</label>
-                    <input 
-                      type="text" name="name" className="form-control rounded-3" 
-                      value={formData.name} onChange={handleChange} disabled={!isEditing} required 
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold text-muted">Email Address</label>
-                    <input 
-                      type="email" name="email" className="form-control rounded-3" 
-                      value={formData.email} onChange={handleChange} disabled={!isEditing} required 
-                    />
-                  </div>
-                  <div className="col-md-12">
-                    <label className="form-label small fw-semibold text-muted">Phone Number</label>
-                    <input 
-                      type="text" name="phone" className="form-control rounded-3" placeholder="Add mobile number" 
-                      value={formData.phone} onChange={handleChange} disabled={!isEditing} 
-                    />
-                  </div>
-                  <div className="col-md-12">
-                    <label className="form-label small fw-semibold text-muted">Bio / Summary</label>
-                    <textarea 
-                      name="bio" rows="3" className="form-control rounded-3" placeholder="Tell us about yourself..." 
-                      value={formData.bio} onChange={handleChange} disabled={!isEditing} 
-                    />
-                  </div>
-                </div>
-
-                <hr className="my-4 text-muted opacity-25" />
-
-                {/* Company Block Info */}
-                <h6 className="fw-bold text-secondary mb-3"><i className="bi bi-briefcase me-2"></i>Company Details</h6>
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold text-muted">Company Name</label>
-                    <input 
-                      type="text" name="company_name" className="form-control rounded-3" placeholder="e.g. Acme Corp" 
-                      value={formData.company_name} onChange={handleChange} disabled={!isEditing} 
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold text-muted">Job Title</label>
-                    <input 
-                      type="text" name="job_title" className="form-control rounded-3" placeholder="e.g. Senior Software Engineer" 
-                      value={formData.job_title} onChange={handleChange} disabled={!isEditing} 
-                    />
-                  </div>
-                </div>
-
-                <hr className="my-4 text-muted opacity-25" />
-
-                {/* Educational Block Info */}
-                <h6 className="fw-bold text-secondary mb-3"><i className="bi bi-mortarboard me-2"></i>Educational Details</h6>
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold text-muted">School / University</label>
-                    <input 
-                      type="text" name="education_school" className="form-control rounded-3" placeholder="e.g. Stanford University" 
-                      value={formData.education_school} onChange={handleChange} disabled={!isEditing} 
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-semibold text-muted">Degree / Specialization</label>
-                    <input 
-                      type="text" name="education_degree" className="form-control rounded-3" placeholder="e.g. B.S. Computer Science" 
-                      value={formData.education_degree} onChange={handleChange} disabled={!isEditing} 
-                    />
-                  </div>
-                </div>
-
-                {isEditing && (
-                  <div className="d-flex gap-2 justify-content-end mt-4">
-                    <button type="button" className="btn btn-light btn-sm px-4 rounded-pill fw-semibold" onClick={() => setIsEditing(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary btn-sm px-4 rounded-pill fw-semibold">
-                      Save Changes
-                    </button>
-                  </div>
-                )}
-              </form>
-            </div>
           </div>
         </div>
+
+        {/* PERSONAL INFORMATION */}
+        <div className="card shadow-sm border-0 mb-4">
+
+          <div className="card-header bg-white py-3">
+            <h5 className="mb-0 fw-bold">
+              <FaUser className="text-primary me-2" />
+              Personal Information
+            </h5>
+          </div>
+
+          <div className="card-body">
+
+            <div className="row">
+
+              <InfoItem
+                label="Full Name"
+                value={profile.full_name || user?.name}
+              />
+
+              <InfoItem
+                label="Email"
+                value={user?.email}
+              />
+
+              <InfoItem
+                label="Phone"
+                value={profile.phone}
+              />
+
+              <InfoItem
+                label="Location"
+                value={profile.location}
+              />
+
+              <InfoItem
+                label="Expected CTC"
+                value={
+                  profile.expected_ctc
+                    ? `₹${profile.expected_ctc} LPA`
+                    : null
+                }
+              />
+
+            </div>
+
+          </div>
+        </div>
+
+        {/* SKILLS */}
+        <div className="card shadow-sm border-0 mb-4">
+
+          <div className="card-header bg-white py-3">
+
+            <h5 className="mb-0 fw-bold">
+              <FaTools className="text-primary me-2" />
+              Skills
+            </h5>
+
+          </div>
+
+          <div className="card-body">
+
+            {profile.skills ? (
+              <div className="d-flex flex-wrap gap-2">
+
+                {profile.skills
+                  .split(",")
+                  .map((skill, index) => (
+                    <span
+                      key={index}
+                      className="badge bg-primary px-3 py-2"
+                    >
+                      {skill.trim()}
+                    </span>
+                  ))}
+
+              </div>
+            ) : (
+              <p className="text-muted mb-0">
+                No skills added.
+              </p>
+            )}
+
+          </div>
+
+        </div>
+
+        {/* SOCIAL LINKS */}
+        <div className="card shadow-sm border-0 mb-4">
+
+          <div className="card-header bg-white py-3">
+
+            <h5 className="mb-0 fw-bold">
+              🔗 Professional Links
+            </h5>
+
+          </div>
+
+          <div className="card-body">
+
+            <div className="row">
+
+              <div className="col-md-6 mb-3">
+
+                <div className="border rounded p-3">
+
+                  <FaLinkedin
+                    className="text-primary me-2"
+                    size={20}
+                  />
+
+                  <strong>LinkedIn</strong>
+
+                  <div className="mt-2">
+
+                    {profile.linkedin_url ? (
+                      <a
+                        href={profile.linkedin_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {profile.linkedin_url}
+                      </a>
+                    ) : (
+                      <span className="text-muted">
+                        Not added
+                      </span>
+                    )}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div className="col-md-6 mb-3">
+
+                <div className="border rounded p-3">
+
+                  <FaGlobe
+                    className="text-success me-2"
+                    size={20}
+                  />
+
+                  <strong>Portfolio</strong>
+
+                  <div className="mt-2">
+
+                    {profile.portfolio_url ? (
+                      <a
+                        href={profile.portfolio_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {profile.portfolio_url}
+                      </a>
+                    ) : (
+                      <span className="text-muted">
+                        Not added
+                      </span>
+                    )}
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* EMPLOYMENT */}
+        <div className="card shadow-sm border-0 mb-4">
+
+          <div className="card-header bg-white py-3">
+
+            <h5 className="mb-0 fw-bold">
+              <FaBriefcase className="text-primary me-2" />
+              Employment Information
+            </h5>
+
+          </div>
+
+          <div className="card-body">
+
+            {profile.currently_employed ? (
+
+              <div className="row">
+
+                <InfoItem
+                  label="Company"
+                  value={profile.company_name}
+                />
+
+                <InfoItem
+                  label="Designation"
+                  value={profile.designation}
+                />
+
+                <InfoItem
+                  label="Start Date"
+                  value={profile.emp_start_date}
+                />
+
+                <InfoItem
+                  label="End Date"
+                  value={
+                    profile.emp_is_present
+                      ? "Present"
+                      : profile.emp_end_date
+                  }
+                />
+
+                <div className="col-12 mt-3">
+
+                  <strong>About Role</strong>
+
+                  <p className="text-muted mt-2">
+                    {profile.about_role || "Not provided"}
+                  </p>
+
+                </div>
+
+              </div>
+
+            ) : (
+
+              <div className="alert alert-info mb-0">
+                Currently not employed.
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
+
+        {/* EDUCATION */}
+        <div className="card shadow-sm border-0 mb-4">
+
+          <div className="card-header bg-white py-3">
+
+            <h5 className="mb-0 fw-bold">
+              <FaGraduationCap className="text-primary me-2" />
+              Education
+            </h5>
+
+          </div>
+
+          <div className="card-body">
+
+            {profile.education_history &&
+            profile.education_history.length > 0 ? (
+
+              profile.education_history.map((education, index) => (
+
+                <div
+                  key={education.id || index}
+                  className="border rounded p-3 mb-3"
+                >
+
+                  <div className="row">
+
+                    <div className="col-md-6">
+
+                      <h6 className="fw-bold">
+                        {education.degree || "Degree"}
+                      </h6>
+
+                      <p className="mb-1">
+                        {education.college_name}
+                      </p>
+
+                      <p className="text-muted mb-0">
+                        <FaMapMarkerAlt className="me-2" />
+                        {education.location}
+                      </p>
+
+                    </div>
+
+                    <div className="col-md-6 mt-3 mt-md-0">
+
+                      <p className="mb-1">
+                        <strong>Start:</strong>{" "}
+                        {education.start_date || "N/A"}
+                      </p>
+
+                      <p className="mb-1">
+                        <strong>End:</strong>{" "}
+                        {education.is_present
+                          ? "Present"
+                          : education.end_date || "N/A"}
+                      </p>
+
+                      <p className="mb-0">
+                        <strong>Passout Year:</strong>{" "}
+                        {education.passout_year || "N/A"}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              ))
+
+            ) : (
+
+              <p className="text-muted mb-0">
+                No education details added.
+              </p>
+
+            )}
+
+          </div>
+
+        </div>
+
+        {/* RESUME */}
+        <div className="card shadow-sm border-0 mb-4">
+
+          <div className="card-header bg-white py-3">
+
+            <h5 className="mb-0 fw-bold">
+              <FaFileAlt className="text-primary me-2" />
+              Resume
+            </h5>
+
+          </div>
+
+          <div className="card-body">
+
+            {profile.resume_file ? (
+
+              <a
+                href={`http://127.0.0.1:8000/${profile.resume_file}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-outline-primary"
+              >
+                <FaFileAlt className="me-2" />
+                View Resume
+              </a>
+
+            ) : (
+
+              <p className="text-muted mb-0">
+                Resume not uploaded.
+              </p>
+
+            )}
+
+          </div>
+
+        </div>
+
+        {/* ABOUT */}
+        {profile.about_role && (
+          <div className="card shadow-sm border-0 mb-4">
+
+            <div className="card-header bg-white py-3">
+
+              <h5 className="mb-0 fw-bold">
+                About
+              </h5>
+
+            </div>
+
+            <div className="card-body">
+
+              <p className="text-muted mb-0">
+                {profile.about_role}
+              </p>
+
+            </div>
+
+          </div>
+        )}
 
       </div>
     </div>
   );
 }
 
-export default Profile;
+
+/* INFO COMPONENT */
+
+function InfoItem({ label, value }) {
+
+  return (
+    <div className="col-md-6 mb-4">
+
+      <div className="border rounded p-3 h-100">
+
+        <small className="text-muted">
+          {label}
+        </small>
+
+        <div className="fw-semibold mt-1">
+          {value || "Not provided"}
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
