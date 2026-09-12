@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css"; 
+import { API_URL } from "../config";
 
 function Register() {
   const [name, setName] = useState("");
@@ -21,7 +22,9 @@ function Register() {
     const userData = { name, email, password };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/users", {
+      const response = await fetch(
+  `${API_URL}/users`,
+  {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),

@@ -15,6 +15,7 @@ import {
   FaEnvelope,
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { API_URL } from "../config";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export default function Profile() {
 
       // Get user details
       const userResponse = await fetch(
-        `http://127.0.0.1:8000/users/${userId}`
+        `${API_URL}/users/${userId}`
       );
 
       if (!userResponse.ok) {
@@ -53,7 +54,7 @@ export default function Profile() {
 
       // Get profile details
       const profileResponse = await fetch(
-        `http://127.0.0.1:8000/profiles/${userId}`
+        `${API_URL}/profiles/${userId}`
       );
 
       if (!profileResponse.ok) {
@@ -534,7 +535,7 @@ export default function Profile() {
             {profile.resume_file ? (
 
               <a
-                href={`http://127.0.0.1:8000/${profile.resume_file}`}
+                href={`${API_URL}/${profile.resume_file}`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-outline-primary"

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Navbar from "../components/navbar";
+import { API_URL } from "../config";
 
 function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,7 +33,7 @@ function JobsPage() {
   // 2. Fetch live openings from the database API collection
   useEffect(() => {
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/jobs/")
+    fetch(`${API_URL}/jobs/`)
       .then((response) => {
         if (!response.ok) throw new Error("Network response was not ok");
         return response.json();

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Navbar from "../components/navbar"; 
+import { API_URL } from "../config";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ function Dashboard() {
 
   const fetchDashboard = async (userId, signal) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/dashboard/${userId}`, { signal });
+      const res = await fetch(`${API_URL}/dashboard/${userId}`, { signal });
       const data = await res.json();
 
       if (!res.ok) {

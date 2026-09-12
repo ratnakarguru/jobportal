@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { Link } from "react-router-dom"; 
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../config";
 
 
 function Login() {
@@ -23,7 +24,9 @@ function Login() {
     const loginData = { email, password };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/auth/login", {
+      const response = await fetch(
+  `${API_URL}/auth/login`,
+  {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,8 +44,8 @@ if (response.ok) {
     localStorage.setItem("user_id", userId);
 
     const statusResponse = await fetch(
-      `http://127.0.0.1:8000/onboarding/status/${userId}`
-    );
+  `${API_URL}/onboarding/status/${userId}`
+);
 
     const status = await statusResponse.json();
 

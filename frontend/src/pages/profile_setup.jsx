@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { API_URL } from "../config";
 
 // ── Generate year range for Passout Year dropdown ──
 const currentYear = new Date().getFullYear();
@@ -11,13 +12,13 @@ const styles = `
   .ps-root *, .ps-root *::before, .ps-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
   .ps-root {
     font-family: 'DM Sans', sans-serif;
-    background: #f0f2f7;
+    background: #f0f2f7; 
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     padding: 32px 16px 60px;
-    --primary: #3b5bdb;
+    --primary: #3b5bdb1d;
     --primary-light: #eef1ff;
     --primary-mid: #748ffc;
     --accent: #22c55e;
@@ -235,7 +236,9 @@ function ProfileSetup() {
     const userId = localStorage.getItem("user_id");
     if (!userId) { setIsFetching(false); return; }
     try {
-      const res = await fetch(`http://127.0.0.1:8000/users/${userId}`);
+      const res = await fetch(
+  `${API_URL}/users/${userId}`
+);
       const data = await res.json();
       setFormData(prev => ({ ...prev, fullName: data.name || "" }));
     } catch (err) {
@@ -299,7 +302,9 @@ function ProfileSetup() {
     };
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/profiles/${userId}`, {
+      const res = await fetch(
+  `${API_URL}/profiles/${userId}`,
+  {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

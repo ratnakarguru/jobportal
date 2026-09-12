@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { API_URL } from "../config";
 
 function UploadResume() {
   const location = useLocation();
@@ -62,7 +63,7 @@ function UploadResume() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/resume/${userId}`,
+        `${API_URL}/resume/${userId}`,
         {
           method: "POST",
           body: formData,
